@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { serverEnv } from '../env';
-import type { Database } from './database.types';
+import { serverEnv } from '../env.ts';
+import type { Database } from './database.types.ts';
 
 let client: SupabaseClient<Database> | undefined;
 

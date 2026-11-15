@@ -1,6 +1,6 @@
 // Tipos inferidos de los esquemas Zod. Solo tipos: importar este archivo no carga Zod.
 import type { z } from 'zod';
-import type * as s from './schemas';
+import type * as s from './schemas.ts';
 
 export type LocalDate = z.infer<typeof s.localDateSchema>;
 export type Period = z.infer<typeof s.periodSchema>;

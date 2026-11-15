@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { AnalysisResult, EvidenceRecord, FarmInput, Plan } from '../../src/domain/contracts';
+import type { AnalysisResult, EvidenceRecord, FarmInput, Plan } from '../../src/domain/contracts.ts';
 import {
   analysisResultSchema,
   climateEvidenceSchema,
@@ -9,7 +9,7 @@ import {
   parseFarmInput,
   planSchema,
   scenarioSchema,
-} from '../../src/domain/schemas';
+} from '../../src/domain/schemas.ts';
 
 const peru: FarmInput = {
   location: { lat: -6.77, lon: -79.84, origin: 'gps', accuracyM: 25 },

@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import type { EvidenceRecord, LocalDate, Source } from '../../domain/contracts';
-import { evidenceRecordSchema } from '../../domain/schemas';
-import type { Json } from './database.types';
-import { getServerSupabase } from './server';
+import type { EvidenceRecord, LocalDate, Source } from '../../domain/contracts.ts';
+import { evidenceRecordSchema } from '../../domain/schemas.ts';
+import type { Json } from './database.types.ts';
+import { getServerSupabase } from './server.ts';
 
 // Caché compartida de evidencia científica. Solo servidor. Sin datos de la parcela:
 // la clave usa la celda del producto, nunca la coordenada exacta.

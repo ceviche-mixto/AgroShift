@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { afterAll, describe, expect, it } from 'vitest';
-import type { EvidenceRecord } from '../../src/domain/contracts';
+import type { EvidenceRecord } from '../../src/domain/contracts.ts';
 import {
   acquireClimateRefresh,
   consumeBudget,
@@ -8,8 +8,8 @@ import {
   readClimate,
   releaseClimateRefresh,
   type ClimateKey,
-} from '../../src/services/supabase/cache';
-import { getServerSupabase } from '../../src/services/supabase/server';
+} from '../../src/services/supabase/cache.ts';
+import { getServerSupabase } from '../../src/services/supabase/server.ts';
 
 // Prueba contra el proyecto real. Solo corre con `npm run test:live` (carga `.env`).
 const live = Boolean(process.env.SUPABASE_SECRET_KEY && process.env.PUBLIC_SUPABASE_URL);

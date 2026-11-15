@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import type { Database } from './database.types';
+import type { Database } from './database.types.ts';
 
 // Cliente público (anon). Las tablas de caché le niegan todo acceso por RLS.
 // Perezoso: el shell y el build funcionan sin variables definidas.
