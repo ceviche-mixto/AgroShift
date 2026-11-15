@@ -1,0 +1,48 @@
+---
+// Plan A y Plan B juntos. La isla clona la plantilla `plan` en cada montaje y rellena los slots.
+---
+<div class="pila">
+  <div data-ff="result-state"></div>
+
+  <div class="planes">
+    <div data-ff="plan-a"></div>
+    <div data-ff="plan-b"></div>
+  </div>
+
+  <section data-ff="missing" class="pila-corta" aria-labelledby="falta-titulo" hidden>
+    <h3 id="falta-titulo" class="subtitulo">Qué falta</h3>
+    <ul data-slot="list" class="lista"></ul>
+  </section>
+
+  <template data-ff-tpl="plan">
+    <article class="plan">
+      <h3 class="plan__encabezado">
+        <span data-slot="role" class="plan__rol"></span>
+        <span data-slot="title" class="plan__titulo"></span>
+      </h3>
+      <div data-slot="state"></div>
+      <p data-slot="intro" class="plan__intro"></p>
+
+      <div data-group="signals" class="plan__grupo">
+        <h4 class="subtitulo">Cuándo cambiar al otro plan</h4>
+        <ul data-slot="list" class="lista"></ul>
+      </div>
+      <div data-group="reasons" class="plan__grupo">
+        <h4 class="subtitulo">Por qué</h4>
+        <ul data-slot="list" class="lista"></ul>
+      </div>
+      <div data-group="restrictions" class="plan__grupo">
+        <h4 class="subtitulo">Ten en cuenta</h4>
+        <ul data-slot="list" class="lista"></ul>
+      </div>
+      <div data-group="actions" class="plan__grupo">
+        <h4 class="subtitulo">Qué hacer</h4>
+        <ul data-slot="list" class="lista"></ul>
+      </div>
+      <div data-group="toverify" class="plan__grupo">
+        <h4 class="subtitulo">Qué revisar</h4>
+        <ul data-slot="list" class="lista"></ul>
+      </div>
+    </article>
+  </template>
+</div>

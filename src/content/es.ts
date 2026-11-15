@@ -1,6 +1,7 @@
 // Textos visibles en español. Módulo puro: solo tipos del contrato (se borran al compilar).
 // Los metadatos científicos (producto, versión, unidad, resolución) NO van aquí: salen del contrato.
 import type {
+  CacheOrigin,
   CropAnswer,
   EvidenceKind,
   FarmLocation,
@@ -286,3 +287,43 @@ export const ALERTA_FUEGO: Mensaje = {
 
 export const AVISO_DECISION =
   'Esta herramienta ayuda a decidir. No reemplaza la revisión en tu campo ni la ayuda de un técnico.';
+
+// ---------- Textos dinámicos de la pantalla del formulario y del resultado (Fase 3) ----------
+
+export const ROL_PLAN = { A: 'Plan A', B: 'Plan B' } as const;
+
+/** De dónde salió el dato de una fuente (slot `origin` de la plantilla `source`). */
+export const ORIGEN_DATO: Record<CacheOrigin, string> = {
+  live: 'Consultado ahora',
+  shared_cache: 'Copia reciente guardada en el servidor',
+  stale_snapshot: 'Copia guardada hace tiempo',
+  local_snapshot: 'Copia guardada en este dispositivo',
+};
+
+/** Ubicación: avisos de la zona `location-status`. `metros` es la precisión que informa el aparato. */
+export const UBICACION_ESTADO = {
+  buscandoGps: 'Buscando tu ubicación…',
+  gpsListo: 'Listo. Usaremos tu ubicación para revisar el clima de tu zona.',
+  gpsAproximada: (metros: number) =>
+    `Tu ubicación es aproximada (error de unos ${Math.round(metros)} metros). Revisa que las coordenadas sean de tu campo.`,
+  buscandoLocalidad: 'Buscando tu localidad…',
+  sinCoincidencias: 'No encontramos esa localidad. Prueba con otro nombre o escribe las coordenadas.',
+  variasCoincidencias: 'Encontramos varios lugares con ese nombre. Elige el tuyo.',
+  coincidenciaAproximada: 'Esta ubicación es aproximada: es el centro de la localidad, no tu campo.',
+  elegida: (nombre: string) => `Elegiste: ${nombre}.`,
+  errorBusqueda: 'No pudimos buscar la localidad ahora. Escribe las coordenadas o vuelve a intentar.',
+} as const;
+
+/** Origen de la respuesta a una pregunta del resultado. */
+export const RESPUESTA_ORIGEN = {
+  local: 'Respuesta armada con los datos de tu resultado.',
+  ia: 'Explicación redactada con ayuda de inteligencia artificial, solo con los datos de tu resultado.',
+} as const;
+
+/** Planes guardados en este dispositivo. */
+export const GUARDADO_ESTADO = {
+  guardado: 'Guardamos este plan en tu dispositivo.',
+  quitado: 'Quitamos el plan guardado.',
+  error: 'No pudimos guardar el plan en tu dispositivo. Revisa que tu navegador permita guardar datos.',
+  abierto: 'Abrimos el plan guardado.',
+} as const;

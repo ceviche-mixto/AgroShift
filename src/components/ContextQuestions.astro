@@ -1,0 +1,19 @@
+---
+import { QUESTION_IDS, questionText } from '../domain/explain.ts';
+---
+<section class="pila" aria-labelledby="preguntas-titulo">
+  <h3 id="preguntas-titulo" class="subtitulo subtitulo--grande">Preguntas sobre tu plan</h3>
+  <div class="preguntas">
+    {QUESTION_IDS.map((id) => (
+      <button type="button" class="opcion" data-ff-question={id}>{questionText(id)}</button>
+    ))}
+  </div>
+  <div data-ff="answer" aria-live="polite" tabindex="-1" class="respuesta"></div>
+
+  <template data-ff-tpl="answer">
+    <div>
+      <p data-slot="origin" class="texto-suave"></p>
+      <ul data-slot="list" class="lista"></ul>
+    </div>
+  </template>
+</section>

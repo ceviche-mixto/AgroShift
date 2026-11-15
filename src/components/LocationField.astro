@@ -1,0 +1,80 @@
+---
+import { CAMPOS } from '../content/es.ts';
+
+const c = CAMPOS.ubicacion;
+---
+<div class="pila">
+  <input type="hidden" name="origin" value="manual_coordinates" />
+  <input type="hidden" name="accuracy" value="" />
+
+  <div>
+    <button type="button" class="opcion" data-ff="gps">{c.opciones.gps}</button>
+  </div>
+
+  <div class="pila-corta">
+    <label for="place" class="etiqueta">{c.localidad}</label>
+    <div class="fila-busqueda">
+      <input
+        type="text"
+        id="place"
+        name="place"
+        class="entrada"
+        autocomplete="off"
+        autocapitalize="words"
+        enterkeyhint="search"
+        aria-describedby="error-ubicacion"
+      />
+      <button type="button" class="opcion" data-ff="search">{c.opciones.place_search}</button>
+    </div>
+  </div>
+
+  <div data-ff="location-status" aria-live="polite" class="texto-suave"></div>
+
+  <fieldset data-ff="place-results" class="opciones" hidden>
+    <legend class="etiqueta">Elige tu localidad</legend>
+  </fieldset>
+
+  <div role="group" aria-labelledby="coordenadas-titulo" class="pila-corta">
+    <p id="coordenadas-titulo" class="etiqueta">{c.opciones.manual_coordinates}</p>
+    <div class="par">
+      <div class="pila-corta">
+        <label for="lat" class="etiqueta etiqueta--fina">{c.latitud}</label>
+        <input
+          type="text"
+          id="lat"
+          name="lat"
+          class="entrada dato-tecnico"
+          inputmode="decimal"
+          autocomplete="off"
+          spellcheck="false"
+          placeholder="-6,77"
+          aria-describedby="error-ubicacion"
+        />
+      </div>
+      <div class="pila-corta">
+        <label for="lon" class="etiqueta etiqueta--fina">{c.longitud}</label>
+        <input
+          type="text"
+          id="lon"
+          name="lon"
+          class="entrada dato-tecnico"
+          inputmode="decimal"
+          autocomplete="off"
+          spellcheck="false"
+          placeholder="-79,84"
+          aria-describedby="error-ubicacion"
+        />
+      </div>
+    </div>
+  </div>
+
+  <template data-ff-tpl="place-option">
+    <label class="opcion-fila">
+      <input type="radio" name="place_choice" />
+      <span>
+        <span data-slot="name" class="opcion-fila__nombre"></span>
+        <span data-slot="coords" class="dato-tecnico texto-suave"></span>
+      </span>
+    </label>
+  </template>
+</div>

@@ -1,14 +1,75 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import FarmForm from '../components/FarmForm.astro';
+import PlanComparison from '../components/PlanComparison.astro';
+import Alerts from '../components/Alerts.astro';
+import ContextQuestions from '../components/ContextQuestions.astro';
+import ScientificSources from '../components/ScientificSources.astro';
+import { ESTADOS, AVISO_DECISION } from '../content/es.ts';
 ---
-<BaseLayout title="AgroShift" description="AgroShift: gestión de turnos agrícolas.">
-  <h1 class="text-3xl font-bold leading-tight">AgroShift</h1>
-  <p class="mt-4">
-    Bienvenido a AgroShift. Aquí podrá registrar y consultar los turnos de trabajo del campo de forma sencilla.
-  </p>
-  <section class="aviso mt-6" aria-labelledby="proximamente">
-    <h2 id="proximamente" class="text-xl font-bold">Próximamente</h2>
-    <p class="mt-2">El formulario de registro llegará en la Fase 3.</p>
-  </section>
-  <p class="mt-6"><a class="boton" href="#proximamente">Ver aviso</a></p>
+<BaseLayout title="AgroShift" description="AgroShift: compara dos opciones de siembra para tu campo.">
+  <div data-farm-flow class="pila-grande">
+    <div class="pila-corta">
+      <h1 class="text-3xl font-bold leading-tight">Planea tu próxima siembra</h1>
+      <p class="texto-suave">Responde cinco preguntas y compara dos opciones para tu campo.</p>
+    </div>
+
+    <FarmForm />
+
+    <div data-ff="status" role="status" aria-live="polite"></div>
+
+    <div data-ff="loading" class="espera" hidden>
+      <span class="espera__giro" aria-hidden="true"></span>
+      <p>
+        <strong>{ESTADOS.espera.titulo}</strong><br />
+        {ESTADOS.espera.explicacion}
+      </p>
+    </div>
+
+    <div data-ff="net" hidden></div>
+
+    <section data-ff="results" class="pila-grande" aria-labelledby="results-title" hidden>
+      <h2 id="results-title" data-ff="results-title" tabindex="-1" class="text-2xl font-bold leading-tight">
+        Tu plan para esta siembra
+      </h2>
+      <PlanComparison />
+      <Alerts />
+      <div class="acciones">
+        <button type="button" class="opcion" data-ff="edit">Cambiar mis respuestas</button>
+        <button type="button" class="opcion" data-ff="save">Guardar este plan</button>
+        <button type="button" class="opcion" data-ff="refresh" hidden>Actualizar con datos nuevos</button>
+      </div>
+      <ContextQuestions />
+      <ScientificSources />
+      <p class="texto-suave">{AVISO_DECISION}</p>
+    </section>
+
+    <section data-ff="saved" class="pila" aria-labelledby="saved-title" hidden>
+      <h2 id="saved-title" class="text-2xl font-bold leading-tight">Tus planes guardados</h2>
+      <ul data-ff="saved-list" class="guardados"></ul>
+    </section>
+
+    <template data-ff-tpl="message">
+      <div class="estado">
+        <p class="estado__etiqueta">
+          <span class="estado__simbolo" data-slot="symbol" aria-hidden="true"></span>
+          <span data-slot="label"></span>
+        </p>
+        <p class="estado__titulo" data-slot="title"></p>
+        <p data-slot="text"></p>
+        <p class="estado__paso" data-slot="step"></p>
+      </div>
+    </template>
+
+    <template data-ff-tpl="saved-item">
+      <li class="guardado">
+        <p class="guardado__texto">
+          <span data-slot="title" class="guardado__titulo"></span>
+          <span data-slot="date" class="texto-suave"></span>
+        </p>
+        <button type="button" class="opcion" data-act="open">Ver</button>
+        <button type="button" class="opcion" data-act="delete">Quitar</button>
+      </li>
+    </template>
+  </div>
 </BaseLayout>

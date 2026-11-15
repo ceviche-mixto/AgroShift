@@ -1,0 +1,129 @@
+---
+import { CAMPOS } from '../content/es.ts';
+import LocationField from './LocationField.astro';
+
+const { ubicacion, cultivo, objetivo, agua, siembra } = CAMPOS;
+---
+<form data-ff="form" novalidate class="formulario">
+  <fieldset class="grupo" aria-describedby="ayuda-ubicacion">
+    <legend class="grupo__titulo">{ubicacion.etiqueta}</legend>
+    <p id="ayuda-ubicacion" class="grupo__ayuda">{ubicacion.ayuda}</p>
+    <LocationField />
+    <p id="error-ubicacion" data-ff-error="ubicacion" class="grupo__error" hidden></p>
+  </fieldset>
+
+  <fieldset class="grupo" aria-describedby="ayuda-cultivo">
+    <legend class="grupo__titulo">{cultivo.etiqueta}</legend>
+    <p id="ayuda-cultivo" class="grupo__ayuda">{cultivo.ayuda}</p>
+    <div class="opciones">
+      <label class="opcion-fila">
+        <input type="radio" name="crop_stage" value="current" checked aria-describedby="error-cultivo" />
+        <span>{cultivo.etapa.current}</span>
+      </label>
+      <label class="opcion-fila">
+        <input type="radio" name="crop_stage" value="last_harvested" aria-describedby="error-cultivo" />
+        <span>{cultivo.etapa.last_harvested}</span>
+      </label>
+    </div>
+    <div class="pila-corta">
+      <label for="crop_name" class="etiqueta etiqueta--fina">{cultivo.nombre}</label>
+      <input
+        type="text"
+        id="crop_name"
+        name="crop_name"
+        class="entrada"
+        autocomplete="off"
+        autocapitalize="none"
+        aria-describedby="error-cultivo"
+      />
+    </div>
+    <label class="opcion-fila">
+      <input type="checkbox" name="crop_unknown" aria-describedby="error-cultivo" />
+      <span>{cultivo.noSe}</span>
+    </label>
+    <p id="error-cultivo" data-ff-error="cultivo" class="grupo__error" hidden></p>
+  </fieldset>
+
+  <fieldset class="grupo" aria-describedby="ayuda-objetivo">
+    <legend class="grupo__titulo">{objetivo.etiqueta}</legend>
+    <p id="ayuda-objetivo" class="grupo__ayuda">{objetivo.ayuda}</p>
+    <div class="opciones">
+      <label class="opcion-fila">
+        <input type="radio" name="goal" value="next_crop" aria-describedby="error-objetivo" />
+        <span>{objetivo.opciones.next_crop}</span>
+      </label>
+      <label class="opcion-fila">
+        <input type="radio" name="goal" value="save_water" aria-describedby="error-objetivo" />
+        <span>{objetivo.opciones.save_water}</span>
+      </label>
+      <label class="opcion-fila">
+        <input type="radio" name="goal" value="care_soil" aria-describedby="error-objetivo" />
+        <span>{objetivo.opciones.care_soil}</span>
+      </label>
+    </div>
+    <p id="error-objetivo" data-ff-error="objetivo" class="grupo__error" hidden></p>
+  </fieldset>
+
+  <fieldset class="grupo" aria-describedby="ayuda-agua">
+    <legend class="grupo__titulo">{agua.etiqueta}</legend>
+    <p id="ayuda-agua" class="grupo__ayuda">{agua.ayuda}</p>
+    <div class="opciones">
+      <label class="opcion-fila">
+        <input type="radio" name="water" value="enough" aria-describedby="error-agua" />
+        <span>{agua.opciones.enough}</span>
+      </label>
+      <label class="opcion-fila">
+        <input type="radio" name="water" value="limited" aria-describedby="error-agua" />
+        <span>{agua.opciones.limited}</span>
+      </label>
+      <label class="opcion-fila">
+        <input type="radio" name="water" value="unknown" aria-describedby="error-agua" />
+        <span>{agua.opciones.unknown}</span>
+      </label>
+    </div>
+    <p id="error-agua" data-ff-error="agua" class="grupo__error" hidden></p>
+  </fieldset>
+
+  <fieldset class="grupo grupo--siembra" aria-describedby="ayuda-siembra">
+    <legend class="grupo__titulo">{siembra.etiqueta}</legend>
+    <p id="ayuda-siembra" class="grupo__ayuda">{siembra.ayuda}</p>
+    <div class="opciones">
+      <label class="opcion-fila">
+        <input type="radio" name="planting_precision" value="day" checked aria-describedby="error-siembra" />
+        <span>{siembra.precision.day}</span>
+      </label>
+      <label class="opcion-fila">
+        <input type="radio" name="planting_precision" value="month" aria-describedby="error-siembra" />
+        <span>{siembra.precision.month}</span>
+      </label>
+    </div>
+    <div class="pila-corta siembra__dia">
+      <label for="planting_date" class="etiqueta etiqueta--fina">Día de siembra</label>
+      <input type="date" id="planting_date" name="planting_date" class="entrada" aria-describedby="error-siembra" />
+    </div>
+    <div class="pila-corta siembra__mes">
+      <label for="planting_month" class="etiqueta etiqueta--fina">Mes de siembra</label>
+      <input
+        type="month"
+        id="planting_month"
+        name="planting_month"
+        class="entrada dato-tecnico"
+        pattern="\d{4}-\d{2}"
+        placeholder="2027-06"
+        autocomplete="off"
+        aria-describedby="ayuda-mes error-siembra"
+      />
+      <p id="ayuda-mes" class="texto-suave">Si no ves un calendario, escribe el año y el mes así: 2027-06.</p>
+    </div>
+    <label class="opcion-fila">
+      <input type="checkbox" name="planting_unknown" aria-describedby="error-siembra" />
+      <span>{siembra.noSe}</span>
+    </label>
+    <p id="error-siembra" data-ff-error="siembra" class="grupo__error" hidden></p>
+  </fieldset>
+
+  <div class="pila-corta">
+    <button type="submit" class="boton boton--principal" data-ff="submit">Ver mi plan</button>
+    <p class="texto-suave">Después del resultado podrás sumar datos de tu suelo y de tus cultivos anteriores.</p>
+  </div>
+</form>

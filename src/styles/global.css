@@ -200,3 +200,163 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ---------- Fase 3: formulario, planes, preguntas y fuentes (solo adiciones) ---------- */
+
+/* Agrupar con espacio, no con cajas. */
+.pila, .pila-corta, .pila-grande { display: grid; }
+.pila { gap: 1rem; }
+.pila-corta { gap: 0.5rem; }
+.pila-grande { gap: 2rem; }
+
+.texto-suave { color: var(--color-texto-suave); }
+
+/* Coordenadas e identificadores técnicos: lo único en monoespaciada. */
+.dato-tecnico {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 0.95em;
+}
+/* Cifras climáticas y agronómicas alineadas. */
+.plan, .fuente, .respuesta, .entrada, .estado, .guardado, .opcion-fila { font-variant-numeric: tabular-nums; }
+
+/* Formulario */
+.formulario { display: grid; gap: 2.5rem; }
+.grupo { display: grid; gap: 1rem; min-inline-size: 0; margin: 0; padding: 0; border: 0; }
+.grupo__titulo { padding: 0; margin-bottom: 0.25rem; font-size: 1.375rem; font-weight: 700; line-height: 1.3; }
+.grupo__ayuda { margin: 0; color: var(--color-texto-suave); }
+.grupo__error {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  background: var(--alerta-fondo);
+  border-left: 0.5rem solid var(--alerta-borde);
+  font-weight: 700;
+}
+.grupo__error::before { content: "\2716\FE0E\00a0"; color: var(--alerta-borde); }
+
+.etiqueta { font-weight: 700; }
+.etiqueta--fina { font-weight: 400; color: var(--color-texto-suave); }
+
+.entrada {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: var(--tamano-tactil);
+  padding: 0.5rem 0.75rem;
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  border: 2px solid var(--color-borde);
+  border-radius: 0.5rem;
+  font: inherit;
+}
+.entrada.dato-tecnico { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size: 1rem; }
+.entrada::placeholder { color: var(--color-texto-suave); opacity: 0.8; }
+.entrada[aria-invalid="true"],
+.opcion-fila:has([aria-invalid="true"]) {
+  border-color: var(--alerta-borde);
+  box-shadow: inset 0 0 0 2px var(--alerta-borde);
+}
+
+/* Radios y casillas nativos; toda la fila es el área táctil (>= 48 px). */
+.opciones { display: grid; gap: 0.25rem; margin: 0; padding: 0; border: 0; min-inline-size: 0; }
+.opcion-fila {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: var(--tamano-tactil);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+.opcion-fila:hover { background: var(--opcion-hover-fondo); }
+.opcion-fila input { flex: none; width: 1.5rem; height: 1.5rem; margin: 0; accent-color: var(--color-primario); }
+.opcion-fila__nombre { display: block; font-weight: 700; }
+
+.fila-busqueda, .par { display: grid; gap: 0.75rem; }
+@media (min-width: 30rem) {
+  .fila-busqueda { grid-template-columns: 1fr auto; }
+  .par { grid-template-columns: 1fr 1fr; gap: 1rem; }
+}
+
+/* Un solo botón principal por pantalla. */
+.boton--principal { width: 100%; min-height: 3.5rem; font-size: 1.25rem; cursor: pointer; }
+@media (min-width: 30rem) { .boton--principal { width: auto; justify-self: start; padding: 0 2.5rem; } }
+
+/* Siembra: solo el campo que corresponde a la precisión elegida. */
+.siembra__mes { display: none; }
+.grupo--siembra:has([name="planting_precision"][value="month"]:checked) .siembra__mes { display: grid; }
+.grupo--siembra:has([name="planting_precision"][value="month"]:checked) .siembra__dia { display: none; }
+
+/* Resultado: Plan A y Plan B juntos; apilados en móvil, lado a lado desde 48rem. */
+.planes { display: grid; gap: 1.5rem; }
+@media (min-width: 48rem) { .planes { grid-template-columns: 1fr 1fr; align-items: start; } }
+.plan {
+  padding: 1.25rem;
+  background: var(--color-superficie);
+  border: 2px solid var(--color-borde);
+  border-radius: 0.5rem;
+}
+.plan > * { margin: 0; }
+.plan > * + * { margin-top: 1rem; }
+.plan [data-slot="state"]:empty { display: none; }
+[data-ff="plan-a"] .plan { border: 4px solid var(--color-primario); }
+.plan__encabezado { font-size: 1.25rem; font-weight: 700; line-height: 1.3; }
+.plan__rol { display: block; font-size: 1.125rem; color: var(--color-texto-suave); }
+.plan__titulo { display: block; font-size: 1.5rem; }
+[data-ff="plan-a"] .plan__rol { color: var(--color-primario); }
+[data-ff="plan-a"] .plan__titulo { font-size: 1.875rem; line-height: 1.2; }
+.plan__intro { font-size: 1.125rem; }
+.plan__grupo > * { margin: 0; }
+.plan__grupo > * + * { margin-top: 0.5rem; }
+
+.subtitulo { margin: 0; font-size: 1.125rem; font-weight: 700; }
+.subtitulo--grande { font-size: 1.5rem; }
+.lista { margin: 0; padding-inline-start: 1.25rem; list-style: disc; }
+.lista > li + li { margin-top: 0.5rem; }
+
+/* Acciones del resultado */
+.acciones { display: grid; gap: 0.75rem; }
+@media (min-width: 30rem) { .acciones { display: flex; flex-wrap: wrap; } }
+
+/* Preguntas del plan */
+.preguntas { display: grid; gap: 0.5rem; }
+.preguntas .opcion { justify-content: flex-start; text-align: start; }
+@media (min-width: 48rem) { .preguntas { grid-template-columns: 1fr 1fr; } }
+.respuesta { padding: 0; }
+.respuesta:empty { display: none; }
+.respuesta > * { padding: 1rem; background: var(--color-superficie); border-radius: 0.5rem; }
+.respuesta > * > * { margin: 0; }
+.respuesta > * > * + * { margin-top: 0.75rem; }
+
+/* Fuentes científicas: discreto, cerrado, texto técnico solo dentro. */
+.fuentes__resumen {
+  display: flex;
+  align-items: center;
+  min-height: var(--tamano-tactil);
+  font-weight: 700;
+  cursor: pointer;
+}
+.fuentes__cuerpo { padding-top: 0.5rem; }
+.fuentes__lista { display: grid; gap: 1.5rem; margin: 0; padding: 0; list-style: none; }
+.fuente { display: grid; gap: 0.5rem; }
+.fuente > * { margin: 0; }
+.fuente [data-slot="state"]:empty { display: none; }
+.enlace {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tamano-tactil);
+  color: var(--color-primario);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.fuente__datos { display: grid; gap: 0.75rem; margin: 0; }
+.fuente__datos dt { font-weight: 700; color: var(--color-texto-suave); }
+.fuente__datos dd { margin: 0; }
+@media (min-width: 40rem) {
+  .fuente__datos > div { display: grid; grid-template-columns: 10rem 1fr; gap: 1rem; }
+}
+
+/* Planes guardados */
+.guardados { display: grid; gap: 0.75rem; margin: 0; padding: 0; list-style: none; }
+.guardado { display: grid; gap: 0.75rem; padding: 1rem; background: var(--color-superficie); border-radius: 0.5rem; }
+.guardado__texto { margin: 0; }
+.guardado__titulo { display: block; font-weight: 700; }
+@media (min-width: 30rem) { .guardado { grid-template-columns: 1fr auto auto; align-items: center; } }
