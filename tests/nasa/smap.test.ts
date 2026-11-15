@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { cellSmap } from '../../src/services/nasa/grid.ts';
 import { normalizeSmap, smapKey, SMAP_LAYERS } from '../../src/services/nasa/smap.ts';
 
-// Fixture sintético con el formato de columnas de AppEEARS (<producto>_<versión>_<capa>).
-// No es un bundle real: la prueba con bundle real queda bloqueada sin credenciales AppEEARS.
+// Fixture sintético con el formato de columnas de AppEEARS (<producto>_<versión>_<capa>),
+// más un extracto literal de un bundle real (tarea de puntos del 2026-11-15, celda de Chiclayo).
 const S = 'SPL4SMGP_008_Geophysical_Data_sm_surface';
 const R = 'SPL4SMGP_008_Geophysical_Data_sm_rootzone';
 const q = { lat: -6.77, lon: -79.84, window: { start: '2025-01-01', end: '2025-01-05' } } as const;
@@ -42,6 +42,22 @@ describe('normalizeSmap', () => {
     expect(pts(records[1])).toEqual([0.41, null, 0.41, 0.39, null]);
     expect(records[0]?.coverage).toMatchObject({ status: 'partial', validCount: 3, expectedCount: 5 });
     expect(observedUntil).toBe('2025-01-05');
+  });
+
+  it('lee el formato real de un bundle de AppEEARS y la celda coincide con la fila y columna del producto', () => {
+    const real = [
+      'Category,ID,Latitude,Longitude,Date,SMAP_Tile,SPL4SMGP_008_Line_Y_9.00805km,SPL4SMGP_008_Sample_X_9.00805km,SPL4SMGP_008_Geophysical_Data_sm_rootzone,SPL4SMGP_008_Geophysical_Data_sm_surface',
+      'agroshift,1,-6.7586,-79.8703,2025-01-01 01:30:00 UTC,h00v00,907.0,1072.0,0.0194751,0.0683895',
+      'agroshift,1,-6.7586,-79.8703,2025-01-01 04:30:00 UTC,h00v00,907.0,1072.0,0.0196694,0.0717517',
+      'agroshift,1,-6.7586,-79.8703,2025-01-01 07:30:00 UTC,h00v00,907.0,1072.0,0.021285,0.1000537',
+    ].join('\n');
+    expect(cell.cellId).toBe('ease2-9km:r907c1072');
+    const { records, observedUntil } = normalizeSmap(real, q, q.window, now);
+    expect(records.map((r) => r.variable)).toEqual(SMAP_LAYERS.map((l) => l.variable));
+    // superficie y zona radicular: promedio de las tres lecturas de 3 h del día
+    expect(pts(records[0])?.[0]).toBe(0.08006);
+    expect(pts(records[1])?.[0]).toBe(0.02014);
+    expect(observedUntil).toBe('2025-01-01');
   });
 
   it('una celda sin datos queda con cobertura none, explícita, sin ceros', () => {

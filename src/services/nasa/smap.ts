@@ -51,8 +51,10 @@ function splitLine(line: string): string[] {
 
 /**
  * Normaliza el CSV de resultados de una tarea de puntos de AppEEARS.
- * Columnas esperadas: `Date`, `Latitude`, `Longitude` y `<producto>_<versión>_<capa>` por capa.
- * Si hay varias lecturas por fecha (SMAP L4 es de 3 h) el valor diario es su promedio.
+ * Columnas reales (bundle del 2026-11-15): `Category,ID,Latitude,Longitude,Date,SMAP_Tile,
+ * SPL4SMGP_008_Line_Y_9.00805km,SPL4SMGP_008_Sample_X_9.00805km` y `SPL4SMGP_008_<capa>` por capa,
+ * con `Date` como `YYYY-MM-DD hh:mm:ss UTC`. SMAP L4 trae 8 lecturas de 3 h por día: el valor
+ * diario es su promedio.
  * Descarta filas de otra celda, el relleno y valores fuera del rango válido: quedan como `null`.
  */
 export function normalizeSmap(
