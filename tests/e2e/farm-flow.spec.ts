@@ -1,0 +1,345 @@
+import { expect, test, type BrowserContext, type Page, type Route } from '@playwright/test';
+import type { AnalyzeResponse, FarmInput } from '../../src/domain/contracts.ts';
+import { cropName } from '../../src/domain/explain.ts';
+import { evaluateRotation } from '../../src/domain/rotation.ts';
+import { analyzeResponseSchema } from '../../src/domain/schemas.ts';
+import { farm, responseFor } from '../browser/fixtures.ts';
+
+// Flujo completo contra la salida estática del build (service worker real). Las API se simulan con
+// el MISMO motor y contrato que usa el servidor: la respuesta sale de computeLocal / evaluateRotation.
+
+const INDIA = { lat: '12,97', lon: '77,59' };
+const NOW = new Date('2026-11-15T12:00:00Z');
+
+/** Entrada de India que corresponde a lo que escribe `fillForm` con los valores por defecto. */
+const indiaInput = (extra: Partial<FarmInput> = {}): FarmInput =>
+  farm(12.97, 77.59, { planting: { status: 'known', date: '2027-06-01', precision: 'month' }, ...extra });
+
+async function fillForm(page: Page, o: { coords?: { lat: string; lon: string }; crop?: string; goal?: string; water?: string } = {}) {
+  const { lat, lon } = o.coords ?? INDIA;
+  await page.getByLabel('Latitud').fill(lat);
+  await page.getByLabel('Longitud').fill(lon);
+  await page.getByRole('radio', { name: 'Lo coseché por última vez' }).check();
+  await page.getByLabel('Nombre del cultivo').fill(o.crop ?? 'Maíz');
+  await page.getByRole('radio', { name: o.goal ?? '¿Qué puedo sembrar después?' }).check();
+  await page.getByRole('radio', { name: o.water ?? 'Tengo suficiente agua' }).check();
+  await page.getByRole('radio', { name: 'Sé solo el mes' }).check();
+  await page.getByLabel('Mes de siembra').fill('2027-06');
+}
+const submit = (page: Page) => page.getByRole('button', { name: 'Ver mi plan' }).click();
+const planA = (page: Page) => page.locator('[data-ff="plan-a"]');
+
+const json = (route: Route, body: unknown, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
+const bodyOf = (route: Route) => route.request().postDataJSON() as FarmInput;
+
+/** Servidor de pruebas: /api/analyze responde con el motor real y las fuentes locales. */
+async function mockApi(context: BrowserContext, opts: { explain?: string | null; delayMs?: number; alerts?: AnalyzeResponse['alerts'] } = {}) {
+  const calls: FarmInput[] = [];
+  await context.route('**/api/analyze', async (route) => {
+    const input = bodyOf(route);
+    calls.push(input);
+    if (opts.delayMs) await new Promise((r) => setTimeout(r, opts.delayMs));
+    const base = responseFor(input);
+    await json(route, { ...base, alerts: opts.alerts ?? [], explain: opts.explain ?? null }).catch(() => {});
+  });
+  return calls;
+}
+
+test.describe('formulario y resultado', () => {
+  test('compara Plan A y Plan B antes del detalle y enlaza las fuentes recibidas', async ({ page, context }) => {
+    await mockApi(context);
+    await page.goto('/');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'es');
+    await fillForm(page);
+    await submit(page);
+
+    const title = page.getByRole('heading', { name: 'Tu plan para esta siembra' });
+    await expect(title).toBeFocused();
+    await expect(page.getByText('Tu plan está listo')).toBeVisible();
+    await expect(page.getByRole('heading', { name: /^Plan A/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /^Plan B/ })).toBeVisible();
+
+    const summary = page.getByText('Fuentes Científicas Utilizadas', { exact: true });
+    const [a, b, s] = await Promise.all([planA(page).boundingBox(), page.locator('[data-ff="plan-b"]').boundingBox(), summary.boundingBox()]);
+    expect(a!.y).toBeLessThan(s!.y);
+    expect(b!.y).toBeLessThan(s!.y);
+
+    // Los enlaces del bloque científico son exactamente los datasets de la evidencia recibida
+    const expected = responseFor(indiaInput()).result.climate.records.map((r) => r.dataset.url).sort();
+    await summary.click();
+    const hrefs = await page.locator('[data-ff="sources-list"] a').evaluateAll((as) => as.map((a) => (a as HTMLAnchorElement).href).sort());
+    expect(hrefs).toEqual(expected);
+    for (const a of await page.locator('[data-ff="sources-list"] a').all()) {
+      await expect(a).toHaveAttribute('rel', 'noopener noreferrer');
+    }
+  });
+
+  test('errores por campo: enfoca el primero, marca aria-invalid y anuncia en la región de estado', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('[data-ff="status"]')).toHaveAttribute('role', 'status');
+    await submit(page);
+    await expect(page.locator('#error-ubicacion')).toBeVisible();
+    await expect(page.locator('#error-objetivo')).toBeVisible();
+    await expect(page.locator('[data-ff="status"]')).toContainText('Revisa tus respuestas');
+    await expect(page.getByLabel('Nombre de tu localidad')).toBeFocused();
+    await expect(page.getByLabel('Latitud')).toHaveAttribute('aria-invalid', 'true');
+    // Corregir un campo limpia su error sin esperar al próximo envío
+    await page.getByRole('radio', { name: 'Tengo poca agua' }).check();
+    await expect(page.locator('#error-agua')).toBeHidden();
+  });
+
+  test('con GPS denegado se completa y envía solo con teclado', async ({ page, context }) => {
+    await mockApi(context);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Usar mi ubicación' }).click();
+    await expect(page.locator('[data-ff="location-status"]')).toContainText('No pudimos usar tu ubicación');
+
+    await page.getByLabel('Latitud').focus();
+    const k = page.keyboard;
+    await k.type('12,97');
+    await k.press('Tab');
+    await k.type('77,59');
+    await k.press('Tab'); // tipo de cultivo (marcado "Lo cultivo ahora")
+    await k.press('Tab'); // nombre del cultivo
+    await k.type('Maíz');
+    await k.press('Tab'); // "No sé"
+    await k.press('Tab'); // objetivo: primer radio
+    await k.press('Space');
+    await k.press('Tab'); // agua
+    await k.press('Space');
+    await k.press('Tab'); // precisión de la siembra (día)
+    await k.press('ArrowRight'); // mes
+    await k.press('Tab'); // campo del mes: segmento del mes
+    await k.press('Tab'); // segmento del año
+    await k.press('Tab'); // "No sé todavía"
+    await k.press('Space');
+    await k.press('Tab'); // botón de envío
+    await expect(page.getByRole('button', { name: 'Ver mi plan' })).toBeFocused();
+    await k.press('Enter');
+    await expect(page.getByRole('heading', { name: 'Tu plan para esta siembra' })).toBeFocused();
+    // Sin fecha de siembra el plan queda a medias y dice qué revisar
+    await expect(page.getByText('Tu plan está a medias')).toBeVisible();
+  });
+
+  test('localidad ambigua: pide elegir y Enter busca sin enviar el formulario', async ({ page, context }) => {
+    await mockApi(context);
+    await context.route('**/api/location', (route) =>
+      json(route, {
+        status: 'ok',
+        attribution: 'Búsqueda de localidades: GeoNames, a través de Open-Meteo (CC BY 4.0).',
+        places: [
+          { name: 'Bengaluru', detail: 'Karnataka, India', lat: 12.97, lon: 77.59 },
+          { name: 'Bengaluru', detail: 'Otro lugar, India', lat: 13.5, lon: 77.1 },
+        ],
+      }),
+    );
+    await page.goto('/');
+    await page.getByLabel('Nombre de tu localidad').fill('Bengaluru');
+    await page.getByLabel('Nombre de tu localidad').press('Enter');
+    await expect(page.locator('[data-ff="location-status"]')).toContainText('Elige el tuyo');
+    await expect(page.locator('[data-ff="results"]')).toBeHidden();
+    await page.getByRole('radio', { name: /Karnataka, India/ }).check();
+    await expect(page.getByLabel('Latitud')).toHaveValue('12,97');
+    await expect(page.locator('[data-ff="location-status"]')).toContainText('aproximada');
+    await fillForm(page, { coords: { lat: '12,97', lon: '77,59' } });
+    await submit(page);
+    await expect(page.getByRole('heading', { name: /^Plan A/ })).toBeVisible();
+  });
+
+  test('preguntas: respuesta local inmediata y explicación del modelo solo tras elegir', async ({ page, context }) => {
+    await mockApi(context, { explain: 'contexto-firmado' });
+    let explainCalls = 0;
+    await context.route('**/api/explain', async (route) => {
+      explainCalls++;
+      await json(route, { questionId: 'less_water', source: 'model', items: [{ key: 'B:reasons:0', text: 'Texto del modelo de prueba.' }] });
+    });
+    await page.goto('/');
+    await fillForm(page);
+    await submit(page);
+    await expect(page.getByRole('heading', { name: /^Plan A/ })).toBeVisible();
+    expect(explainCalls).toBe(0);
+
+    await page.getByRole('button', { name: '¿Qué pasa si tengo menos agua?' }).click();
+    await expect(page.locator('[data-ff="answer"]')).toContainText('Texto del modelo de prueba.');
+    await expect(page.locator('[data-ff="answer"]')).toContainText('inteligencia artificial');
+    expect(explainCalls).toBe(1);
+  });
+
+  test('guardar, editar, abrir y quitar un plan', async ({ page, context }) => {
+    await mockApi(context);
+    await page.goto('/');
+    await fillForm(page);
+    await submit(page);
+    await page.getByRole('button', { name: 'Guardar este plan' }).click();
+    await expect(page.getByRole('heading', { name: 'Tus planes guardados' })).toBeVisible();
+    await expect(page.locator('[data-ff="status"]')).toContainText('Guardamos este plan');
+
+    await page.getByRole('button', { name: 'Cambiar mis respuestas' }).click();
+    await expect(page.locator('[data-ff="results"]')).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Usar mi ubicación' })).toBeFocused();
+    await expect(page.getByLabel('Latitud')).toHaveValue('12,97'); // conserva lo escrito
+    await page.getByRole('radio', { name: 'Quiero cuidar mi suelo' }).check();
+    await submit(page);
+    await expect(page.getByRole('heading', { name: /^Plan A/ })).toBeVisible();
+
+    await page.locator('[data-act="open"]').click();
+    await expect(page.getByRole('heading', { name: 'Tu plan para esta siembra' })).toBeFocused();
+    await expect(page.getByRole('radio', { name: '¿Qué puedo sembrar después?' })).toBeChecked(); // el formulario vuelve al plan guardado
+
+    await page.locator('[data-act="delete"]').click();
+    await expect(page.getByRole('heading', { name: 'Tus planes guardados' })).toBeHidden();
+  });
+
+  test('reenvío seguido: solo se presenta el plan de la última entrada', async ({ page, context }) => {
+    const first = indiaInput();
+    const second = indiaInput({ crop: { status: 'known', stage: 'last_harvested', name: 'Garbanzo' } });
+    const expectedA = responseFor(second).result.planA!.cropIds.map(cropName).join(', luego ');
+    expect(responseFor(first).result.planA!.cropIds).not.toEqual(responseFor(second).result.planA!.cropIds);
+
+    let n = 0;
+    await context.route('**/api/analyze', async (route) => {
+      const input = bodyOf(route);
+      if (n++ === 0) await new Promise((r) => setTimeout(r, 2_000)); // la primera llega tarde
+      await json(route, { ...responseFor(input), alerts: [], explain: null }).catch(() => {});
+    });
+    await page.goto('/');
+    await fillForm(page);
+    await submit(page);
+    await page.getByLabel('Nombre del cultivo').fill('Garbanzo');
+    await submit(page);
+    await expect(planA(page)).toContainText(expectedA);
+    await page.waitForTimeout(2_500); // da tiempo a que llegue la respuesta antigua
+    await expect(planA(page)).toContainText(expectedA);
+    await expect(page.locator('[data-ff="loading"]')).toBeHidden();
+  });
+});
+
+test.describe('niveles de cobertura y alertas', () => {
+  test('ok, parcial e insuficiente se distinguen, y una alerta no se confunde con falta de datos', async ({ page, context }) => {
+    await mockApi(context);
+    await page.goto('/');
+    await fillForm(page);
+    await submit(page);
+    await expect(page.getByText('Tu plan está listo')).toBeVisible();
+
+    // Parcial: Chiclayo queda bajo el mínimo hídrico de todas las fichas
+    await page.getByRole('button', { name: 'Cambiar mis respuestas' }).click();
+    await fillForm(page, { coords: { lat: '-6,77', lon: '-79,84' } });
+    await submit(page);
+    await expect(page.getByText('Tu plan está a medias')).toBeVisible();
+
+    // Insuficiente: sin evidencia climática el motor no inventa planes y explica qué falta
+    await context.unroute('**/api/analyze');
+    await context.route('**/api/analyze', (route) => {
+      const input = bodyOf(route);
+      const climate = {
+        query: { lat: input.location.lat, lon: input.location.lon, window: { start: '2025-01-01', end: '2025-12-31' } },
+        assembledAt: NOW.toISOString(),
+        sources: [{ source: 'power' as const, state: 'unavailable' as const, ageSeconds: null, detail: 'prueba' }],
+        records: [],
+      };
+      const result = { contractVersion: 1 as const, ...evaluateRotation(input, climate), generatedAt: NOW.toISOString(), climate };
+      return json(route, analyzeResponseSchema.parse({ result, alerts: [], explain: null }));
+    });
+    await page.getByRole('button', { name: 'Cambiar mis respuestas' }).click();
+    await page.getByLabel('Latitud').fill('40,4');
+    await page.getByLabel('Longitud').fill('-3,7');
+    await submit(page);
+    await expect(page.getByText('Aún no hay datos suficientes')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Qué falta' })).toBeVisible();
+    await expect(page.getByText('Posible foco de calor cerca')).toBeHidden();
+
+    // Alerta vigente con datos completos
+    await context.unroute('**/api/analyze');
+    await mockApi(context, { alerts: [{ id: 'fire_hotspot_nearby', evidenceId: 'firms:prueba', count: 2, nearestKm: 12.4, latestAt: NOW.toISOString() }] });
+    await page.getByRole('button', { name: 'Cambiar mis respuestas' }).click();
+    await page.getByLabel('Latitud').fill('12,97');
+    await page.getByLabel('Longitud').fill('77,59');
+    await submit(page);
+    await expect(page.getByText('Posible foco de calor cerca')).toBeVisible();
+    await expect(page.getByText('Aún no hay datos suficientes')).toBeHidden();
+  });
+
+  test('reflujo a 320 px sin desplazamiento horizontal, con resultados', async ({ page, context }) => {
+    await mockApi(context);
+    await page.setViewportSize({ width: 320, height: 700 });
+    await page.goto('/');
+    await fillForm(page);
+    await submit(page);
+    await expect(page.getByRole('heading', { name: /^Plan B/ })).toBeVisible();
+    await page.getByText('Fuentes Científicas Utilizadas', { exact: true }).click();
+    const [scroll, inner] = await page.evaluate(() => [document.documentElement.scrollWidth, window.innerWidth]);
+    expect(scroll).toBe(inner);
+    const small = await page.evaluate(() =>
+      [...document.querySelectorAll<HTMLElement>('button, summary, a.boton')].filter((e) => e.offsetParent && e.getBoundingClientRect().height < 47.5).map((e) => e.textContent?.trim()),
+    );
+    expect(small).toEqual([]);
+  });
+});
+
+test.describe('red lenta y sin conexión', () => {
+  test('red lenta: pasados 8 s vuelve a un plan calculado en el dispositivo', async ({ page, context }) => {
+    test.setTimeout(60_000);
+    await mockApi(context, { delayMs: 12_000 });
+    await page.goto('/');
+    await fillForm(page);
+    await submit(page);
+    await expect(page.locator('[data-ff="loading"]')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Revisando tu campo…' })).toBeVisible();
+    await expect(page.getByText('Plan calculado en tu dispositivo')).toBeVisible({ timeout: 15_000 });
+    await expect(planA(page)).toContainText(responseFor(indiaInput()).result.planA!.cropIds.map(cropName).join(', luego '));
+    await expect(page.locator('[data-ff="loading"]')).toBeHidden();
+  });
+
+  test('tras una visita previa, recargar sin red abre el formulario y el plan guardado sin pedir nada', async ({ page, context }) => {
+    test.setTimeout(60_000);
+    await mockApi(context);
+    await page.goto('/');
+    await expect(page.getByText('Listo para usar sin internet')).toBeVisible({ timeout: 30_000 });
+    await fillForm(page);
+    await submit(page);
+    await expect(page.getByRole('heading', { name: /^Plan A/ })).toBeVisible();
+    const online = await planA(page).innerText();
+    await page.getByRole('button', { name: 'Guardar este plan' }).click();
+    await expect(page.getByRole('heading', { name: 'Tus planes guardados' })).toBeVisible();
+
+    await context.setOffline(true);
+    // Los dobles de ruta responderían aun sin red: aquí la API falla como fallaría sin conexión
+    await context.unroute('**/api/analyze');
+    await context.route('**/api/**', (route) => route.abort('internetdisconnected'));
+    await page.reload();
+    await expect(page.getByRole('heading', { name: 'Planea tu próxima siembra' })).toBeVisible();
+    await expect(page.getByText('No hay conexión a internet')).toBeVisible();
+    await expect(page.getByLabel('Latitud')).toBeVisible();
+
+    // El plan guardado se abre sin red y muestra lo mismo que se vio en línea
+    await page.locator('[data-act="open"]').click();
+    await expect(page.getByRole('heading', { name: 'Tu plan para esta siembra' })).toBeFocused();
+    expect(await planA(page).innerText()).toBe(online);
+
+    // Una entrada nueva sin red se calcula en el dispositivo con la misma evidencia científica local
+    await page.getByRole('button', { name: 'Cambiar mis respuestas' }).click();
+    await page.getByRole('radio', { name: 'Quiero cuidar mi suelo' }).check();
+    await submit(page);
+    await expect(page.getByText('Plan calculado en tu dispositivo')).toBeVisible();
+    await expect(page.getByRole('heading', { name: /^Plan B/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Actualizar con datos nuevos' })).toBeHidden();
+
+    // Fuera de las zonas con datos locales no se inventa un plan
+    await page.getByRole('button', { name: 'Cambiar mis respuestas' }).click();
+    await page.getByLabel('Latitud').fill('40,4');
+    await page.getByLabel('Longitud').fill('-3,7');
+    await submit(page);
+    await expect(page.getByText('Sin internet y sin datos guardados de tu zona')).toBeVisible();
+
+    // Al volver la red se ofrece actualizar
+    await context.setOffline(false);
+    await expect(page.getByText('No hay conexión a internet')).toBeHidden();
+  });
+
+  test('una primera visita sin copia previa muestra la pantalla sin datos', async ({ page }) => {
+    await page.goto('/offline/');
+    await expect(page.getByRole('heading').first()).toBeVisible();
+    await expect(page.getByRole('link', { name: /./ }).first()).toBeVisible();
+  });
+});
