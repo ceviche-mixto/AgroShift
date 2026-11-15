@@ -327,3 +327,63 @@ export const GUARDADO_ESTADO = {
   error: 'No pudimos guardar el plan en tu dispositivo. Revisa que tu navegador permita guardar datos.',
   abierto: 'Abrimos el plan guardado.',
 } as const;
+
+// ---------- Mensajes del flujo de la isla (Fase 3.5) ----------
+
+export const BOTON_ENVIAR = { reposo: 'Ver mi plan', enviando: 'Revisando tu campo…' } as const;
+
+export const FLUJO = {
+  sinConexion: {
+    tono: 'aviso',
+    titulo: 'No hay conexión a internet',
+    explicacion: 'Puedes seguir con los planes y datos guardados en tu dispositivo.',
+  },
+  listoSinRed: {
+    tono: 'info',
+    titulo: 'Listo para usar sin internet',
+    explicacion: 'Esta página ya está guardada en tu dispositivo.',
+  },
+  planLocal: {
+    tono: 'info',
+    titulo: 'Plan calculado en tu dispositivo',
+    explicacion: 'Sin internet usamos datos científicos guardados aquí. Pueden ser menos recientes que una consulta nueva.',
+    siguientePaso: 'Cuando vuelva el internet, actualiza para ver datos nuevos.',
+  },
+  sinDatosLocales: {
+    tono: 'sindato',
+    titulo: 'Sin internet y sin datos guardados de tu zona',
+    explicacion: 'No tenemos datos guardados de tu zona para calcular un plan sin conexión.',
+    siguientePaso: 'Conéctate a internet y vuelve a intentar.',
+  },
+  planIncompleto: {
+    tono: 'aviso',
+    titulo: 'Plan incompleto',
+    explicacion: 'Todavía falta información para completar este plan.',
+    siguientePaso: 'Mira lo que debes revisar más abajo.',
+  },
+  sinPlan: {
+    tono: 'sindato',
+    titulo: 'Sin opción por ahora',
+    explicacion: 'Con lo que tenemos no podemos proponer esta opción.',
+  },
+  mostrandoGuardado: {
+    tono: 'info',
+    titulo: 'Mostrando datos guardados',
+    explicacion: 'Seguimos buscando datos nuevos para tu campo.',
+  },
+} as const satisfies Record<string, Mensaje>;
+
+/** Plan que viene de la memoria del dispositivo. `edad` ya viene formateada, p. ej. `hace(ms)`. */
+export function planGuardado(edad: string): Mensaje {
+  return {
+    tono: 'info',
+    titulo: 'Plan guardado en tu dispositivo',
+    explicacion: `Este plan se calculó ${edad}.`,
+    siguientePaso: 'Cuando haya internet, actualiza para ver datos nuevos.',
+  };
+}
+
+export const UBICACION_EXTRA = {
+  unaCoincidencia: 'Encontramos este lugar. Confírmalo para usarlo.',
+  escribeLocalidad: 'Escribe el nombre de tu localidad para buscarla.',
+} as const;

@@ -12,7 +12,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "test": "vitest run",
-    "test:live": "node --env-file=.env node_modules/vitest/vitest.mjs run"
+    "test:live": "node --env-file=.env node_modules/vitest/vitest.mjs run",
+    "test:e2e": "astro build && playwright test"
   },
   "dependencies": {
     "@astrojs/vercel": "^11.0.22",
@@ -24,6 +25,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.12",
+    "@playwright/test": "^1.65.1",
     "@types/node": "^24.19.2",
     "fake-indexeddb": "^6.2.8",
     "typescript": "^6.0.3",

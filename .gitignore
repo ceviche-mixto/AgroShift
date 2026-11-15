@@ -18,3 +18,7 @@ graphify-out/
 # Planificación privada
 PLAN.md
 CONTEXTO_AGROSHIFT.md
+
+# Playwright
+test-results/
+playwright-report/
