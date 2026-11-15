@@ -117,6 +117,8 @@ export interface ClimateOptions {
   snapshots?: Snapshot[];
   fetch?: typeof fetch;
   random?: () => number;
+  /** Presupuesto de refrescos: `false` o un fallo impiden la consulta en vivo de esa fuente. */
+  beforeLive?: (source: ClimateKey['source']) => Promise<boolean>;
 }
 
 interface Outcome {
@@ -197,7 +199,9 @@ async function runSource(p: Provider, q: ClimateQuery, now: Date, signal: AbortS
   if (cached?.fresh) return present(p, relabel(cached.records, 'shared_cache', cached.expiresAt), q, now);
 
   let failure: string | null = null;
-  if (p.live) {
+  const allowed = !p.live || !o.beforeLive || (await within(o.beforeLive(p.source), signal).catch(() => false));
+  if (!allowed) failure = 'cupo_agotado';
+  else if (p.live) {
     let lease: Awaited<ReturnType<Cache['acquire']>> | undefined;
     try {
       lease = cacheUp ? await within(cache.acquire(key, LEASE_SECONDS), signal) : undefined;

@@ -286,6 +286,30 @@ export const analysisResultSchema = z
     "'partial' exige al menos un plan",
   );
 
+/** Alerta vigente derivada de evidencia reciente. El texto visible sale de plantillas por `id`. */
+export const alertSchema = z.strictObject({
+  id: z.literal('fire_hotspot_nearby'),
+  evidenceId: text(160),
+  /** Detecciones de las últimas 24 h cerca de la celda. */
+  count: z.int().min(1),
+  nearestKm: z.number().min(0),
+  latestAt: utcInstantSchema,
+});
+
+/** Respuesta de `POST /api/analyze`. El resultado es lo que el navegador guarda. */
+export const analyzeResponseSchema = z.strictObject({
+  result: analysisResultSchema,
+  alerts: z.array(alertSchema).max(5),
+  /** Contexto firmado y de corta duración para `/api/explain`. `null` si no está disponible. */
+  explain: z.string().max(12_000).nullable(),
+});
+
+export const rateLimitedSchema = z.strictObject({
+  contractVersion: z.literal(CONTRACT_VERSION),
+  status: z.literal('rate_limited'),
+  retryAfterSeconds: z.int().min(1),
+});
+
 export const inputErrorSchema = z.strictObject({
   contractVersion: z.literal(CONTRACT_VERSION),
   status: z.literal('invalid_input'),

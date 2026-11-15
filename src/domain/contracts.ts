@@ -31,3 +31,6 @@ export type Plan = z.infer<typeof s.planSchema>;
 export type ResultState = (typeof s.RESULT_STATES)[number];
 export type AnalysisResult = z.infer<typeof s.analysisResultSchema>;
 export type InputError = z.infer<typeof s.inputErrorSchema>;
+export type Alert = z.infer<typeof s.alertSchema>;
+export type AnalyzeResponse = z.infer<typeof s.analyzeResponseSchema>;
+export type RateLimited = z.infer<typeof s.rateLimitedSchema>;
