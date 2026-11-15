@@ -1,0 +1,137 @@
+{
+  "version": "1.0.0",
+  "rules": [
+    {
+      "id": "rotation-same-crop",
+      "type": "rotation_same_crop",
+      "effect": "discard",
+      "active": true,
+      "version": "1.0.0",
+      "description": "No proponer como siguiente cultivo el mismo que se cosechó o se tiene en la campaña anterior.",
+      "scope": {
+        "kind": "global",
+        "regionIds": [],
+        "condition": null
+      },
+      "params": [
+        {
+          "name": "campañas_consecutivas_máx",
+          "value": 1,
+          "unit": "campañas"
+        }
+      ],
+      "sourceIds": [
+        "fao-ca-diversification",
+        "fao-on-farm-trials-2003",
+        "icar-ragi-pop"
+      ],
+      "note": "FAO: la rotación evita el traslado de plagas específicas de un cultivo y el monocultivo baja rendimientos. ICAR desaconseja ragi tras ragi en el sur de India."
+    },
+    {
+      "id": "rotation-legume-cereal",
+      "type": "rotation_legume_cereal",
+      "effect": "prefer",
+      "active": true,
+      "version": "1.0.0",
+      "description": "Alternar leguminosa de grano y cereal: la leguminosa fija nitrógeno y beneficia al cereal siguiente.",
+      "scope": {
+        "kind": "global",
+        "regionIds": [],
+        "condition": null
+      },
+      "params": [],
+      "sourceIds": [
+        "fao-on-farm-trials-2003",
+        "fao-soils-bulletin-72"
+      ],
+      "note": "Las fuentes respaldan leguminosa antes de cereal; el beneficio depende de la fijación efectiva y de cuánto N sale con la semilla. No cuantifica el aporte."
+    },
+    {
+      "id": "rotation-same-family",
+      "type": "rotation_same_family",
+      "effect": "discard",
+      "active": false,
+      "version": "1.0.0",
+      "description": "No repetir la misma familia botánica en campañas seguidas.",
+      "scope": {
+        "kind": "global",
+        "regionIds": [],
+        "condition": null
+      },
+      "params": [],
+      "sourceIds": [
+        "fao-ca-diversification"
+      ],
+      "note": "Desactivada: la fuente FAO habla de plagas específicas de cultivo, no de familias botánicas. Sin respaldo primario a nivel de familia."
+    },
+    {
+      "id": "thermal-limit",
+      "type": "thermal_limit",
+      "effect": "discard",
+      "active": true,
+      "version": "1.0.0",
+      "description": "Descartar un cultivo si la temperatura media del periodo queda fuera de su rango absoluto de la ficha.",
+      "scope": {
+        "kind": "global",
+        "regionIds": [],
+        "condition": "Rango ECOCROP genérico; la ficha no declara la base temporal de la temperatura."
+      },
+      "params": [
+        {
+          "name": "rango_usado",
+          "value": "crop.temperature.absolute",
+          "unit": "°C"
+        }
+      ],
+      "sourceIds": [
+        "ecocrop-home",
+        "ecocrop-maize",
+        "ecocrop-rice",
+        "ecocrop-wheat",
+        "ecocrop-common-bean",
+        "ecocrop-cowpea",
+        "ecocrop-chickpea",
+        "ecocrop-sorghum",
+        "ecocrop-finger-millet"
+      ],
+      "note": "Los números están en cada ficha de cultivo, cada una con su hoja de datos."
+    },
+    {
+      "id": "water-minimum",
+      "type": "water_minimum",
+      "effect": "warn",
+      "active": true,
+      "version": "1.0.0",
+      "description": "Avisar si la lluvia queda bajo el mínimo absoluto del cultivo y la persona declara agua limitada.",
+      "scope": {
+        "kind": "global",
+        "regionIds": [],
+        "condition": "Solo con agua declarada limitada. El mínimo es de lluvia anual en mm, no del ciclo; no cuenta riego."
+      },
+      "params": [
+        {
+          "name": "rango_usado",
+          "value": "crop.rainfall.absolute.min",
+          "unit": "mm/año"
+        },
+        {
+          "name": "agua_declarada",
+          "value": "limited",
+          "unit": null
+        }
+      ],
+      "sourceIds": [
+        "ecocrop-home",
+        "ecocrop-maize",
+        "ecocrop-rice",
+        "ecocrop-wheat",
+        "ecocrop-common-bean",
+        "ecocrop-cowpea",
+        "ecocrop-chickpea",
+        "ecocrop-sorghum",
+        "ecocrop-finger-millet"
+      ],
+      "note": "Los números están en cada ficha de cultivo, cada una con su hoja de datos."
+    }
+  ]
+}

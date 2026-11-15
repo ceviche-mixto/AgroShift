@@ -1,0 +1,835 @@
+{
+  "version": "1.0.0",
+  "sources": [
+    {
+      "id": "ecocrop-home",
+      "title": "ECOCROP: base de datos de requisitos ecológicos de cultivos",
+      "organization": "FAO",
+      "url": "https://ecocrop.apps.fao.org/ecocrop/srv/en/home",
+      "consultedAt": "2026-11-14",
+      "note": "Describe ECOCROP como buscador por clima y suelo (temperatura, lluvia, luz, textura, profundidad, pH, salinidad, fertilidad). No declara unidades ni cobertura. Escala global y genérica; no sustituye documentación agronómica local."
+    },
+    {
+      "id": "ecocrop-maize",
+      "title": "ECOCROP, hoja de datos de Zea mays L.",
+      "organization": "FAO",
+      "url": "https://ecocrop.apps.fao.org/ecocrop/srv/en/dataSheet?id=2175",
+      "consultedAt": "2026-11-14",
+      "note": "Ficha ECOCROP (FAO), base global y genérica: rangos de opinión de expertos para el cultivo en general, no para una variedad, zona ni suelo concretos. Las unidades no vienen rotuladas en la hoja de datos: °C, mm de lluvia anual y días de ciclo se confirmaron contra las notas de cropView?id=2175. Familia y nombres comunes salen de esa misma ficha (cropView?id=2175)."
+    },
+    {
+      "id": "ecocrop-rice",
+      "title": "ECOCROP, hoja de datos de Oryza sativa L.",
+      "organization": "FAO",
+      "url": "https://ecocrop.apps.fao.org/ecocrop/srv/en/dataSheet?id=1574",
+      "consultedAt": "2026-11-14",
+      "note": "Ficha ECOCROP (FAO), base global y genérica: rangos de opinión de expertos para el cultivo en general, no para una variedad, zona ni suelo concretos. Las unidades no vienen rotuladas en la hoja de datos: °C, mm de lluvia anual y días de ciclo se confirmaron contra las notas de cropView?id=1574. Familia y nombres comunes salen de esa misma ficha (cropView?id=1574)."
+    },
+    {
+      "id": "ecocrop-wheat",
+      "title": "ECOCROP, hoja de datos de Triticum aestivum L.",
+      "organization": "FAO",
+      "url": "https://ecocrop.apps.fao.org/ecocrop/srv/en/dataSheet?id=2114",
+      "consultedAt": "2026-11-14",
+      "note": "Ficha ECOCROP (FAO), base global y genérica: rangos de opinión de expertos para el cultivo en general, no para una variedad, zona ni suelo concretos. Las unidades no vienen rotuladas en la hoja de datos: °C, mm de lluvia anual y días de ciclo se confirmaron contra las notas de cropView?id=2114. Familia y nombres comunes salen de esa misma ficha (cropView?id=2114)."
+    },
+    {
+      "id": "ecocrop-common-bean",
+      "title": "ECOCROP, hoja de datos de Phaseolus vulgaris L.",
+      "organization": "FAO",
+      "url": "https://ecocrop.apps.fao.org/ecocrop/srv/en/dataSheet?id=1668",
+      "consultedAt": "2026-11-14",
+      "note": "Ficha ECOCROP (FAO), base global y genérica: rangos de opinión de expertos para el cultivo en general, no para una variedad, zona ni suelo concretos. Las unidades no vienen rotuladas en la hoja de datos: °C, mm de lluvia anual y días de ciclo se confirmaron contra las notas de cropView?id=1668. Familia y nombres comunes salen de esa misma ficha (cropView?id=1668)."
+    },
+    {
+      "id": "ecocrop-cowpea",
+      "title": "ECOCROP, hoja de datos de Vigna unguiculata (L.) Walp.",
+      "organization": "FAO",
+      "url": "https://ecocrop.apps.fao.org/ecocrop/srv/en/dataSheet?id=2153",
+      "consultedAt": "2026-11-14",
+      "note": "Ficha ECOCROP (FAO), base global y genérica: rangos de opinión de expertos para el cultivo en general, no para una variedad, zona ni suelo concretos. Las unidades no vienen rotuladas en la hoja de datos: °C, mm de lluvia anual y días de ciclo se confirmaron contra las notas de cropView?id=2153. Familia y nombres comunes salen de esa misma ficha (cropView?id=2153)."
+    },
+    {
+      "id": "ecocrop-chickpea",
+      "title": "ECOCROP, hoja de datos de Cicer arietinum L.",
+      "organization": "FAO",
+      "url": "https://ecocrop.apps.fao.org/ecocrop/srv/en/dataSheet?id=2479",
+      "consultedAt": "2026-11-14",
+      "note": "Ficha ECOCROP (FAO), base global y genérica: rangos de opinión de expertos para el cultivo en general, no para una variedad, zona ni suelo concretos. Las unidades no vienen rotuladas en la hoja de datos: °C, mm de lluvia anual y días de ciclo se confirmaron contra las notas de cropView?id=2479. Familia y nombres comunes salen de esa misma ficha (cropView?id=2479)."
+    },
+    {
+      "id": "ecocrop-sorghum",
+      "title": "ECOCROP, hoja de datos de Sorghum bicolor (L.) Moench",
+      "organization": "FAO",
+      "url": "https://ecocrop.apps.fao.org/ecocrop/srv/en/dataSheet?id=48747",
+      "consultedAt": "2026-11-14",
+      "note": "Ficha ECOCROP (FAO), base global y genérica: rangos de opinión de expertos para el cultivo en general, no para una variedad, zona ni suelo concretos. Las unidades no vienen rotuladas en la hoja de datos: °C, mm de lluvia anual y días de ciclo se confirmaron contra las notas de cropView?id=48747. Familia y nombres comunes salen de esa misma ficha (cropView?id=48747)."
+    },
+    {
+      "id": "ecocrop-finger-millet",
+      "title": "ECOCROP, hoja de datos de Eleusine coracana ssp. coracana (L.) Gaertn.",
+      "organization": "FAO",
+      "url": "https://ecocrop.apps.fao.org/ecocrop/srv/en/dataSheet?id=5657",
+      "consultedAt": "2026-11-14",
+      "note": "Ficha ECOCROP (FAO), base global y genérica: rangos de opinión de expertos para el cultivo en general, no para una variedad, zona ni suelo concretos. Las unidades no vienen rotuladas en la hoja de datos: °C, mm de lluvia anual y días de ciclo se confirmaron contra las notas de cropView?id=5657. Familia y nombres comunes salen de esa misma ficha (cropView?id=5657)."
+    },
+    {
+      "id": "fao-ca-diversification",
+      "title": "Conservation Agriculture: species diversification (rotación)",
+      "organization": "FAO",
+      "url": "http://www.fao.org/conservation-agriculture/in-practice/species-diversification/en",
+      "consultedAt": "2026-11-14",
+      "note": "Afirma que la rotación tiene función fitosanitaria y evita el traslado de plagas y enfermedades específicas de un cultivo al siguiente. No habla de familias botánicas ni de leguminosas por nombre. Alcance global y cualitativo."
+    },
+    {
+      "id": "fao-on-farm-trials-2003",
+      "title": "On-farm trials for adapting and adopting good agricultural practices (capítulo: What is the best cropping sequence for the farm?)",
+      "organization": "FAO",
+      "url": "http://www.fao.org/4/y5146e/y5146e0a.htm",
+      "consultedAt": "2026-11-14",
+      "note": "Texto sobre secuencias de cultivo, con ejemplos de Australia y África occidental. Dice que los rendimientos en monocultivo continuo bajan y que las leguminosas aportan N a los cereales siguientes. Cualitativo; no da umbrales por región ni cultivo. Año 2003 según la portada."
+    },
+    {
+      "id": "fao-soils-bulletin-72",
+      "title": "Sustainable dryland cropping in relation to soil productivity, cap. 4 Sustainable crop rotations (Soils Bulletin 72)",
+      "organization": "FAO",
+      "url": "https://www.fao.org/4/v9926e/v9926e06.htm",
+      "consultedAt": "2026-11-14",
+      "note": "Boletín de 1995 sobre secano. Dice que los rendimientos de mijo y sorgo suelen ser mayores el año siguiente a una leguminosa de grano. Ejemplos de África, Asia y Australia; no cubre la costa de Perú ni riego."
+    },
+    {
+      "id": "icar-ragi-pop",
+      "title": "Recommended package of practices: Finger millet (Eleusine coracana Gaertn.)",
+      "organization": "Indian Institute of Millets Research (dominio millets.res.in, red ICAR); el PDF no rotula la institución",
+      "url": "https://www.millets.res.in/technologies/1-Recommended_Package_of_Practices-Finger_Millet.pdf",
+      "consultedAt": "2026-11-14",
+      "note": "Cobertura por estado de India. Tabla de temporadas por estado leída de la maquetación del PDF: la fila de Karnataka muestra kharif temprana o Kar (abril-agosto) y kharif (julio-noviembre); la alineación de filas se infiere del diseño de la tabla. Son temporadas de cultivo (incluyen cosecha), no fechas de siembra. Sin datos para otros cultivos ni para Perú o Kenia."
+    }
+  ],
+  "regions": [
+    {
+      "id": "pe-chiclayo",
+      "name": "Perú, costa norte (zona de Chiclayo)",
+      "bbox": {
+        "latMin": -7.2,
+        "latMax": -6.4,
+        "lonMin": -80.2,
+        "lonMax": -79.4
+      },
+      "note": "Caja de demostración alrededor de Chiclayo, no es límite administrativo."
+    },
+    {
+      "id": "in-bengaluru",
+      "name": "India, Karnataka (zona de Bengaluru)",
+      "bbox": {
+        "latMin": 12.8,
+        "latMax": 13.2,
+        "lonMin": 77.2,
+        "lonMax": 77.8
+      },
+      "note": "Caja de demostración dentro de Karnataka alrededor de Bengaluru, no es límite administrativo."
+    },
+    {
+      "id": "ke-nairobi",
+      "name": "Kenia, zona de Nairobi",
+      "bbox": {
+        "latMin": -1.6,
+        "latMax": -1,
+        "lonMin": 36.5,
+        "lonMax": 37.2
+      },
+      "note": "Caja de demostración alrededor de Nairobi, no es límite administrativo."
+    }
+  ],
+  "crops": [
+    {
+      "id": "maize",
+      "version": "1.0.0",
+      "scientificName": "Zea mays L.",
+      "family": "Gramineae",
+      "group": "cereal",
+      "aliases": [
+        "maíz",
+        "maize",
+        "corn",
+        "choclo",
+        "mahindi",
+        "makai",
+        "makki"
+      ],
+      "temperature": {
+        "unit": "°C",
+        "basis": "Rango de temperatura para el cultivo; la ficha no declara si es media del ciclo, diaria u horaria.",
+        "optimal": {
+          "min": 18,
+          "max": 33
+        },
+        "absolute": {
+          "min": 10,
+          "max": 47
+        }
+      },
+      "rainfall": {
+        "unit": "mm",
+        "basis": "mm por año (la ficha rotula Rainfall (annual)); no está dado por ciclo.",
+        "optimal": {
+          "min": 600,
+          "max": 1200
+        },
+        "absolute": {
+          "min": 400,
+          "max": 1800
+        }
+      },
+      "ph": {
+        "unit": "pH",
+        "basis": "pH del suelo del cultivo según la ficha.",
+        "optimal": {
+          "min": 5,
+          "max": 7
+        },
+        "absolute": {
+          "min": 4.5,
+          "max": 8.5
+        }
+      },
+      "cycle": {
+        "unit": "días",
+        "basis": "Duración mínima y máxima del ciclo entre cultivares, en días; sin óptimo.",
+        "range": {
+          "min": 65,
+          "max": 365
+        }
+      },
+      "sourceIds": [
+        "ecocrop-maize"
+      ],
+      "regions": [
+        {
+          "id": "pe-chiclayo",
+          "coverage": "none",
+          "windows": [],
+          "sourceIds": [],
+          "note": "Sin fuente regional accesible en esta consulta: el repositorio de INIA (calendario agrícola de la costa) no respondió y el documento MIDAGRI devolvió 403."
+        },
+        {
+          "id": "in-bengaluru",
+          "coverage": "none",
+          "windows": [],
+          "sourceIds": [],
+          "note": "Sin fuente regional leída para este cultivo en Karnataka."
+        },
+        {
+          "id": "ke-nairobi",
+          "coverage": "none",
+          "windows": [],
+          "sourceIds": [],
+          "note": "Sin fuente regional por cultivo para Nairobi: FEWS NET describe temporadas por condados y Nairobi no figura; no hay ficha KALRO leída."
+        }
+      ]
+    },
+    {
+      "id": "rice",
+      "version": "1.0.0",
+      "scientificName": "Oryza sativa L.",
+      "family": "Gramineae",
+      "group": "cereal",
+      "aliases": [
+        "arroz",
+        "rice",
+        "paddy",
+        "chawal",
+        "dhan"
+      ],
+      "temperature": {
+        "unit": "°C",
+        "basis": "Rango de temperatura para el cultivo; la ficha no declara si es media del ciclo, diaria u horaria.",
+        "optimal": {
+          "min": 20,
+          "max": 30
+        },
+        "absolute": {
+          "min": 10,
+          "max": 36
+        }
+      },
+      "rainfall": {
+        "unit": "mm",
+        "basis": "mm por año (la ficha rotula Rainfall (annual)); no está dado por ciclo.",
+        "optimal": {
+          "min": 1500,
+          "max": 2000
+        },
+        "absolute": {
+          "min": 1000,
+          "max": 4000
+        }
+      },
+      "ph": {
+        "unit": "pH",
+        "basis": "pH del suelo del cultivo según la ficha.",
+        "optimal": {
+          "min": 5.5,
+          "max": 7
+        },
+        "absolute": {
+          "min": 4.5,
+          "max": 9
+        }
+      },
+      "cycle": {
+        "unit": "días",
+        "basis": "Duración mínima y máxima del ciclo entre cultivares, en días; sin óptimo.",
+        "range": {
+          "min": 80,
+          "max": 180
+        }
+      },
+      "sourceIds": [
+        "ecocrop-rice"
+      ],
+      "regions": [
+        {
+          "id": "pe-chiclayo",
+          "coverage": "none",
+          "windows": [],
+          "sourceIds": [],
+          "note": "Sin fuente regional accesible en esta consulta: el repositorio de INIA (calendario agrícola de la costa) no respondió y el documento MIDAGRI devolvió 403."
+        },
+        {
+          "id": "in-bengaluru",
+          "coverage": "none",
+          "windows": [],
+          "sourceIds": [],
+          "note": "Sin fuente regional leída para este cultivo en Karnataka."
+        },
+        {
+          "id": "ke-nairobi",
+          "coverage": "none",
+          "windows": [],
+          "sourceIds": [],
+          "note": "Sin fuente regional por cultivo para Nairobi: FEWS NET describe temporadas por condados y Nairobi no figura; no hay ficha KALRO leída."
+        }
+      ]
+    },
+    {
+      "id": "wheat",
+      "version": "1.0.0",
+      "scientificName": "Triticum aestivum L.",
+      "family": "Gramineae",
+      "group": "cereal",
+      "aliases": [
+        "trigo",
+        "wheat",
+        "bread wheat"
+      ],
+      "temperature": {
+        "unit": "°C",
+        "basis": "Rango de temperatura para el cultivo; la ficha no declara si es media del ciclo, diaria u horaria.",
+        "optimal": {
+          "min": 15,
+          "max": 23
+        },
+        "absolute": {
+          "min": 5,
+          "max": 27
+        }
+      },
+      "rainfall": {
+        "unit": "mm",
+        "basis": "mm por año (la ficha rotula Rainfall (annual)); no está dado por ciclo.",
+        "optimal": {
+          "min": 750,
+          "max": 900
+        },
+        "absolute": {
+          "min": 300,
+          "max": 1600
+        }
+      },
+      "ph": {
+        "unit": "pH",
+        "basis": "pH del suelo del cultivo según la ficha.",
+        "optimal": {
+          "min": 6,
+          "max": 7
+        },
+        "absolute": {
+          "min": 5.5,
+          "max": 8.5
+        }
+      },
+      "cycle": {
+        "unit": "días",
+        "basis": "Duración mínima y máxima del ciclo entre cultivares, en días; sin óptimo.",
+        "range": {
+          "min": 90,
+          "max": 250
+        }
+      },
+      "sourceIds": [
+        "ecocrop-wheat"
+      ],
+      "regions": [
+        {
+          "id": "pe-chiclayo",
+          "coverage": "none",
+          "windows": [],
+          "sourceIds": [],
+          "note": "Sin fuente regional accesible en esta consulta: el repositorio de INIA (calendario agrícola de la costa) no respondió y el documento MIDAGRI devolvió 403."
+        },
+        {
+          "id": "in-bengaluru",
+          "coverage": "none",
+          "windows": [],
+          "sourceIds": [],
+          "note": "Sin fuente regional leída para este cultivo en Karnataka."
+        },
+        {
+          "id": "ke-nairobi",
+          "coverage": "none",
+          "windows": [],
+          "sourceIds": [],
+          "note": "Sin fuente regional por cultivo para Nairobi: FEWS NET describe temporadas por condados y Nairobi no figura; no hay ficha KALRO leída."
+        }
+      ]
+    },
+    {
+      "id": "common_bean",
+      "version": "1.0.0",
+      "scientificName": "Phaseolus vulgaris L.",
+      "family": "Leguminosae",
+      "group": "legume",
+      "aliases": [
+        "frijol",
+        "frijol común",
+        "poroto",
+        "common bean",
+        "kidney bean",
+        "haricot"
+      ],
+      "temperature": {
+        "unit": "°C",
+        "basis": "Rango de temperatura para el cultivo; la ficha no declara si es media del ciclo, diaria u horaria.",
+        "optimal": {
+          "min": 16,
+          "max": 25
+        },
+        "absolute": {
+          "min": 7,
+          "max": 32
+        }
+      },
+      "rainfall": {
+        "unit": "mm",
+        "basis": "mm por año (la ficha rotula Rainfall (annual)); no está dado por ciclo.",
+        "optimal": {
+          "min": 500,
+          "max": 2000
+        },
+        "absolute": {
+          "min": 300,
+          "max": 4300
+        }
+      },
+      "ph": {
+        "unit": "pH",
+        "basis": "pH del suelo del cultivo según la ficha.",
+        "optimal": {
+          "min": 5.5,
+          "max": 7.5
+        },
+        "absolute": {
+          "min": 4,
+          "max": 9
+        }
+      },
+      "cycle": {
+        "unit": "días",
+        "basis": "Duración mínima y máxima del ciclo entre cultivares, en días; sin óptimo.",
+        "range": {
+          "min": 50,
+          "max": 270
+        }
+      },
+      "sourceIds": [
+        "ecocrop-common-bean"
+      ],
+      "regions": [
+        {
+          "id": "pe-chiclayo",
+          "coverage": "none",
+          "windows": [],
+          "sourceIds": [],
+          "note": "Sin fuente regional accesible en esta consulta: el repositorio de INIA (calendario agrícola de la costa) no respondió y el documento MIDAGRI devolvió 403."
+        },
+        {
+          "id": "in-bengaluru",
+          "coverage": "none",
+          "windows": [],
+          "sourceIds": [],
+          "note": "Sin fuente regional leída para este cultivo en Karnataka."
+        },
+        {
+          "id": "ke-nairobi",
+          "coverage": "none",
+          "windows": [],
+          "sourceIds": [],
+          "note": "Sin fuente regional por cultivo para Nairobi: FEWS NET describe temporadas por condados y Nairobi no figura; no hay ficha KALRO leída."
+        }
+      ]
+    },
+    {
+      "id": "cowpea",
+      "version": "1.0.0",
+      "scientificName": "Vigna unguiculata (L.) Walp.",
+      "family": "Leguminosae",
+      "group": "legume",
+      "aliases": [
+        "caupí",
+        "cowpea",
+        "cow pea",
+        "frijol caupí",
+        "frijol de vaca",
+        "niebe"
+      ],
+      "temperature": {
+        "unit": "°C",
+        "basis": "Rango de temperatura para el cultivo; la ficha no declara si es media del ciclo, diaria u horaria.",
+        "optimal": {
+          "min": 25,
+          "max": 35
+        },
+        "absolute": {
+          "min": 15,
+          "max": 40
+        }
+      },
+      "rainfall": {
+        "unit": "mm",
+        "basis": "mm por año (la ficha rotula Rainfall (annual)); no está dado por ciclo.",
+        "optimal": {
+          "min": 500,
+          "max": 1500
+        },
+        "absolute": {
+          "min": 300,
+          "max": 4100
+        }
+      },
+      "ph": {
+        "unit": "pH",
+        "basis": "pH del suelo del cultivo según la ficha.",
+        "optimal": {
+          "min": 5.5,
+          "max": 7.5
+        },
+        "absolute": {
+          "min": 4,
+          "max": 8.8
+        }
+      },
+      "cycle": {
+        "unit": "días",
+        "basis": "Duración mínima y máxima del ciclo entre cultivares, en días; sin óptimo.",
+        "range": {
+          "min": 30,
+          "max": 240
+        }
+      },
+      "sourceIds": [
+        "ecocrop-cowpea"
+      ],
+      "regions": [
+        {
+          "id": "pe-chiclayo",
+          "coverage": "none",
+          "windows": [],
+          "sourceIds": [],
+          "note": "Sin fuente regional accesible en esta consulta: el repositorio de INIA (calendario agrícola de la costa) no respondió y el documento MIDAGRI devolvió 403."
+        },
+        {
+          "id": "in-bengaluru",
+          "coverage": "none",
+          "windows": [],
+          "sourceIds": [],
+          "note": "Sin fuente regional leída para este cultivo en Karnataka."
+        },
+        {
+          "id": "ke-nairobi",
+          "coverage": "none",
+          "windows": [],
+          "sourceIds": [],
+          "note": "Sin fuente regional por cultivo para Nairobi: FEWS NET describe temporadas por condados y Nairobi no figura; no hay ficha KALRO leída."
+        }
+      ]
+    },
+    {
+      "id": "chickpea",
+      "version": "1.0.0",
+      "scientificName": "Cicer arietinum L.",
+      "family": "Leguminosae",
+      "group": "legume",
+      "aliases": [
+        "garbanzo",
+        "garbanzo bean",
+        "chickpea",
+        "bengal gram",
+        "mdengu"
+      ],
+      "temperature": {
+        "unit": "°C",
+        "basis": "Rango de temperatura para el cultivo; la ficha no declara si es media del ciclo, diaria u horaria.",
+        "optimal": {
+          "min": 15,
+          "max": 29
+        },
+        "absolute": {
+          "min": 7,
+          "max": 35
+        }
+      },
+      "rainfall": {
+        "unit": "mm",
+        "basis": "mm por año (la ficha rotula Rainfall (annual)); no está dado por ciclo.",
+        "optimal": {
+          "min": 600,
+          "max": 1000
+        },
+        "absolute": {
+          "min": 300,
+          "max": 1800
+        }
+      },
+      "ph": {
+        "unit": "pH",
+        "basis": "pH del suelo del cultivo según la ficha.",
+        "optimal": {
+          "min": 6,
+          "max": 8.5
+        },
+        "absolute": {
+          "min": 4.7,
+          "max": 9.5
+        }
+      },
+      "cycle": {
+        "unit": "días",
+        "basis": "Duración mínima y máxima del ciclo entre cultivares, en días; sin óptimo.",
+        "range": {
+          "min": 90,
+          "max": 180
+        }
+      },
+      "sourceIds": [
+        "ecocrop-chickpea"
+      ],
+      "regions": [
+        {
+          "id": "pe-chiclayo",
+          "coverage": "none",
+          "windows": [],
+          "sourceIds": [],
+          "note": "Sin fuente regional accesible en esta consulta: el repositorio de INIA (calendario agrícola de la costa) no respondió y el documento MIDAGRI devolvió 403."
+        },
+        {
+          "id": "in-bengaluru",
+          "coverage": "none",
+          "windows": [],
+          "sourceIds": [],
+          "note": "Sin fuente regional leída para este cultivo en Karnataka."
+        },
+        {
+          "id": "ke-nairobi",
+          "coverage": "none",
+          "windows": [],
+          "sourceIds": [],
+          "note": "Sin fuente regional por cultivo para Nairobi: FEWS NET describe temporadas por condados y Nairobi no figura; no hay ficha KALRO leída."
+        }
+      ]
+    },
+    {
+      "id": "sorghum",
+      "version": "1.0.0",
+      "scientificName": "Sorghum bicolor (L.) Moench",
+      "family": "Gramineae",
+      "group": "cereal",
+      "aliases": [
+        "sorgo",
+        "sorghum",
+        "jowar",
+        "mtama"
+      ],
+      "temperature": {
+        "unit": "°C",
+        "basis": "Rango de temperatura para el cultivo; la ficha no declara si es media del ciclo, diaria u horaria.",
+        "optimal": {
+          "min": 22,
+          "max": 35
+        },
+        "absolute": {
+          "min": 8,
+          "max": 40
+        }
+      },
+      "rainfall": {
+        "unit": "mm",
+        "basis": "mm por año (la ficha rotula Rainfall (annual)); no está dado por ciclo.",
+        "optimal": {
+          "min": 400,
+          "max": 600
+        },
+        "absolute": {
+          "min": 300,
+          "max": 700
+        }
+      },
+      "ph": {
+        "unit": "pH",
+        "basis": "pH del suelo del cultivo según la ficha.",
+        "optimal": {
+          "min": 5.5,
+          "max": 7.5
+        },
+        "absolute": {
+          "min": 5,
+          "max": 8
+        }
+      },
+      "cycle": {
+        "unit": "días",
+        "basis": "Duración mínima y máxima del ciclo entre cultivares, en días; sin óptimo.",
+        "range": {
+          "min": 90,
+          "max": 300
+        }
+      },
+      "sourceIds": [
+        "ecocrop-sorghum"
+      ],
+      "regions": [
+        {
+          "id": "pe-chiclayo",
+          "coverage": "none",
+          "windows": [],
+          "sourceIds": [],
+          "note": "Sin fuente regional accesible en esta consulta: el repositorio de INIA (calendario agrícola de la costa) no respondió y el documento MIDAGRI devolvió 403."
+        },
+        {
+          "id": "in-bengaluru",
+          "coverage": "none",
+          "windows": [],
+          "sourceIds": [],
+          "note": "Sin fuente regional leída para este cultivo en Karnataka."
+        },
+        {
+          "id": "ke-nairobi",
+          "coverage": "none",
+          "windows": [],
+          "sourceIds": [],
+          "note": "Sin fuente regional por cultivo para Nairobi: FEWS NET describe temporadas por condados y Nairobi no figura; no hay ficha KALRO leída."
+        }
+      ]
+    },
+    {
+      "id": "finger_millet",
+      "version": "1.0.0",
+      "scientificName": "Eleusine coracana ssp. coracana (L.) Gaertn.",
+      "family": "Gramineae",
+      "group": "cereal",
+      "aliases": [
+        "ragi",
+        "finger millet",
+        "mijo dedo",
+        "african millet",
+        "wimbi",
+        "nachni"
+      ],
+      "temperature": {
+        "unit": "°C",
+        "basis": "Rango de temperatura para el cultivo; la ficha no declara si es media del ciclo, diaria u horaria.",
+        "optimal": {
+          "min": 18,
+          "max": 30
+        },
+        "absolute": {
+          "min": 8,
+          "max": 35
+        }
+      },
+      "rainfall": {
+        "unit": "mm",
+        "basis": "mm por año (la ficha rotula Rainfall (annual)); no está dado por ciclo.",
+        "optimal": {
+          "min": 500,
+          "max": 1100
+        },
+        "absolute": {
+          "min": 300,
+          "max": 4300
+        }
+      },
+      "ph": {
+        "unit": "pH",
+        "basis": "pH del suelo del cultivo según la ficha.",
+        "optimal": {
+          "min": 6,
+          "max": 7
+        },
+        "absolute": {
+          "min": 5.5,
+          "max": 8.2
+        }
+      },
+      "cycle": {
+        "unit": "días",
+        "basis": "Duración mínima y máxima del ciclo entre cultivares, en días; sin óptimo.",
+        "range": {
+          "min": 75,
+          "max": 180
+        }
+      },
+      "sourceIds": [
+        "ecocrop-finger-millet"
+      ],
+      "regions": [
+        {
+          "id": "pe-chiclayo",
+          "coverage": "none",
+          "windows": [],
+          "sourceIds": [],
+          "note": "Sin fuente regional accesible en esta consulta: el repositorio de INIA (calendario agrícola de la costa) no respondió y el documento MIDAGRI devolvió 403."
+        },
+        {
+          "id": "in-bengaluru",
+          "coverage": "supported",
+          "windows": [
+            {
+              "kind": "cropping_season",
+              "label": "Kar o kharif temprana (Karnataka)",
+              "startMonth": 4,
+              "endMonth": 8
+            },
+            {
+              "kind": "cropping_season",
+              "label": "Kharif (Karnataka)",
+              "startMonth": 7,
+              "endMonth": 11
+            }
+          ],
+          "sourceIds": [
+            "icar-ragi-pop"
+          ],
+          "note": "Temporadas de cultivo por estado (Karnataka), no fechas de siembra; la caja cubre solo la zona de Bengaluru."
+        },
+        {
+          "id": "ke-nairobi",
+          "coverage": "none",
+          "windows": [],
+          "sourceIds": [],
+          "note": "Sin fuente regional por cultivo para Nairobi: FEWS NET describe temporadas por condados y Nairobi no figura; no hay ficha KALRO leída."
+        }
+      ]
+    }
+  ]
+}
