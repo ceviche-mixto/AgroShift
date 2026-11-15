@@ -1,5 +1,5 @@
 import type { Alert, AnalyzeResponse, EvidenceRecord, FarmInput, Finding, Plan } from '../domain/contracts.ts';
-import { answerLocally, cropName, explainFinding, listFacts, type QuestionId, QUESTION_IDS } from '../domain/explain.ts';
+import { answerLocally, cropName, explainFinding, listFacts, needsIrrigation, type QuestionId, QUESTION_IDS } from '../domain/explain.ts';
 import { parseFarmInput } from '../domain/schemas.ts';
 import {
   ALERTA_FUEGO,
@@ -15,7 +15,9 @@ import {
   CAMPOS,
   NATURALEZA_ESCENARIO,
   ORIGEN_DATO,
-  planBPendiente,
+  PASOS,
+  PLAN_INSIGNIA,
+  PLAN_TITULO,
   planGuardado,
   RESPUESTA_ORIGEN,
   RESULTADO,
@@ -99,17 +101,19 @@ function init(root: HTMLElement) {
     el.hidden = !text;
     for (const c of controlsOf(g)) text ? c.setAttribute('aria-invalid', 'true') : c.removeAttribute('aria-invalid');
   }
+  // Un error en otro paso lleva a ese paso antes de enfocar el control.
   function focusFirstError() {
-    for (const g of GROUPS) {
-      if (errorEl(g).hidden) continue;
-      controlsOf(g).find((c) => c.offsetParent !== null)?.focus();
-      return;
-    }
+    const g = GROUPS.find((x) => !errorEl(x).hidden);
+    if (!g) return;
+    goTo(GROUPS.indexOf(g));
+    controlsOf(g).find((c) => c.offsetParent !== null)?.focus();
   }
   form.addEventListener('input', (e) => {
     const g = GROUPS.find((x) => (e.target as HTMLElement).getAttribute('aria-describedby')?.split(' ').includes(`error-${x}`));
     if (g) setError(g, null);
+    sync();
   });
+  form.addEventListener('change', sync);
 
   // ---------- Lectura del formulario ----------
 
@@ -180,13 +184,79 @@ function init(root: HTMLElement) {
     field('planting_date').value = input.planting.status === 'known' && input.planting.precision === 'day' ? input.planting.date : '';
     field('planting_month').value = input.planting.status === 'known' && input.planting.precision === 'month' ? input.planting.date.slice(0, 7) : '';
     for (const g of GROUPS) setError(g, null);
+    showCoords(input.location.origin === 'manual_coordinates');
+    sync();
   }
 
+  // ---------- Pasos (una pregunta a la vez; los campos siguen en el DOM, solo se ocultan) ----------
+
+  const steps = GROUPS.map((g) => one<HTMLElement>(`[data-ff-step="${g}"]`));
+  const last = GROUPS.length - 1;
+  const stepCount = ff('step-count');
+  const progress = ff('progress');
+  const progressBar = ff('progress-bar');
+  const back = ff<HTMLButtonElement>('back');
+  const next = ff<HTMLButtonElement>('next');
+  const stepHint = ff('step-hint');
+  const lastNote = ff('last-note');
+  let step = 0;
+
+  const stepValid = () => !readForm().errors[GROUPS[step]!];
+
+  /** Habilita «Siguiente» / «Ver mi plan» solo cuando el paso actual está bien respondido. */
+  function sync() {
+    const ok = stepValid();
+    next.disabled = !ok;
+    submit.disabled = !ok;
+    stepHint.hidden = ok;
+  }
+
+  function goTo(i: number, focus = true) {
+    step = Math.max(0, Math.min(last, i));
+    steps.forEach((s, n) => (s.hidden = n !== step));
+    const label = PASOS.conteo(step + 1, GROUPS.length);
+    stepCount.textContent = label;
+    progress.setAttribute('aria-valuenow', String(step + 1));
+    progress.setAttribute('aria-valuetext', label);
+    progressBar.style.width = `${((step + 1) / GROUPS.length) * 100}%`;
+    back.hidden = step === 0;
+    next.hidden = step === last;
+    submit.hidden = step !== last;
+    lastNote.hidden = step !== last;
+    sync();
+    if (focus) steps[step]!.querySelector<HTMLElement>('input:not([type="hidden"]), button')?.focus();
+  }
+
+  back.addEventListener('click', () => goTo(step - 1));
+  next.addEventListener('click', () => stepValid() && goTo(step + 1));
+  // Enter avanza (o envía en el último paso) si la respuesta es válida; en botones y en la búsqueda hace lo suyo.
+  form.addEventListener('keydown', (e) => {
+    const t = e.target as HTMLElement;
+    if (e.key !== 'Enter' || e.defaultPrevented || e.isComposing || t instanceof HTMLButtonElement) return;
+    e.preventDefault();
+    if (!stepValid()) return;
+    if (step === last) form.requestSubmit();
+    else goTo(step + 1);
+  });
+
   // ---------- Ubicación: GPS y búsqueda ----------
+
+  const coords = ff('coords');
+  const coordsToggle = ff<HTMLButtonElement>('coords-toggle');
+  function showCoords(open: boolean) {
+    coords.hidden = !open;
+    coordsToggle.setAttribute('aria-expanded', String(open));
+  }
+  coordsToggle.addEventListener('click', () => showCoords(coordsToggle.getAttribute('aria-expanded') !== 'true'));
 
   const locStatus = ff('location-status');
   const placeResults = ff<HTMLFieldSetElement>('place-results');
   const say = (text: string) => (locStatus.textContent = text);
+  /** Mensajes que mandan a escribir las coordenadas: las deja a la vista. */
+  const sayManual = (text: string) => {
+    showCoords(true);
+    say(text);
+  };
   const manual = () => {
     field('origin').value = 'manual_coordinates';
     field('accuracy').value = '';
@@ -195,7 +265,7 @@ function init(root: HTMLElement) {
 
   ff('gps').addEventListener('click', () => {
     setError('ubicacion', null);
-    if (!('geolocation' in navigator)) return say(CAMPOS.ubicacion.errorGps);
+    if (!('geolocation' in navigator)) return sayManual(CAMPOS.ubicacion.errorGps);
     say(UBICACION_ESTADO.buscandoGps);
     navigator.geolocation.getCurrentPosition(
       (p) => {
@@ -204,9 +274,10 @@ function init(root: HTMLElement) {
         field('origin').value = 'gps';
         field('accuracy').value = String(Math.round(p.coords.accuracy));
         placeResults.hidden = true;
+        sync();
         say(p.coords.accuracy > 1000 ? UBICACION_ESTADO.gpsAproximada(p.coords.accuracy) : UBICACION_ESTADO.gpsListo);
       },
-      () => say(CAMPOS.ubicacion.errorGps),
+      () => sayManual(CAMPOS.ubicacion.errorGps),
       { enableHighAccuracy: false, timeout: 10_000, maximumAge: 60_000 },
     );
   });
@@ -222,9 +293,9 @@ function init(root: HTMLElement) {
     try {
       const res = await fetch('/api/location', { method: 'POST', body: JSON.stringify({ q }), signal: AbortSignal.timeout(REQUEST_MS) });
       if (!res.ok) throw new Error(String(res.status));
-      const body = (await res.json()) as { places: Place[]; attribution?: string };
+      const body = (await res.json()) as { places: Place[] };
       if (id !== searchId) return;
-      if (!body.places.length) return say(UBICACION_ESTADO.sinCoincidencias);
+      if (!body.places.length) return sayManual(UBICACION_ESTADO.sinCoincidencias);
       const options = body.places.map((p) => {
         const label = clone('place-option');
         fill(label, { name: p.detail ? `${p.name}, ${p.detail}` : p.name, coords: `${commaNum(p.lat)}, ${commaNum(p.lon)}` });
@@ -240,11 +311,10 @@ function init(root: HTMLElement) {
         return label;
       });
       placeResults.replaceChildren(placeResults.querySelector('legend')!, ...options);
-      if (body.attribution) placeResults.append(Object.assign(document.createElement('p'), { className: 'texto-suave', textContent: body.attribution }));
       placeResults.hidden = false;
       say(body.places.length > 1 ? UBICACION_ESTADO.variasCoincidencias : UBICACION_EXTRA.unaCoincidencia);
     } catch {
-      if (id === searchId) say(UBICACION_ESTADO.errorBusqueda);
+      if (id === searchId) sayManual(UBICACION_ESTADO.errorBusqueda);
     }
   }
   ff('search').addEventListener('click', () => void search());
@@ -265,19 +335,18 @@ function init(root: HTMLElement) {
     const el = clone('plan');
     if (!plan) {
       fill(el, { role: ROL_PLAN[role], title: FLUJO.sinPlan.titulo });
-      el.querySelector('[data-slot="state"]')!.replaceChildren(message(role === 'B' ? planBPendiente() : FLUJO.sinPlan));
+      // Sin plan: una frase, no otra caja (el resultado ya trae su aviso general)
+      fill(el, { intro: (role === 'B' ? ESTADOS.planBPendiente : FLUJO.sinPlan).explicacion });
       el.querySelectorAll('[data-group]').forEach((g) => ((g as HTMLElement).hidden = true));
-      el.querySelector('[data-slot="intro"]')?.remove();
     } else {
+      // Una sola señal por plan: «Requiere riego» es una condición de manejo; «Falta información» solo si la persona puede aportar el dato
+      const condition = plan.completeness === 'incomplete' ? PLAN_INSIGNIA.falta : needsIrrigation(plan) ? PLAN_INSIGNIA.riego : '';
       fill(el, {
         role: ROL_PLAN[role],
-        title: plan.cropIds.length ? plan.cropIds.map(cropName).join(', luego ') : 'Cultivo por definir',
+        title: plan.kind === 'fallow' ? PLAN_TITULO.descanso : plan.cropIds.length ? plan.cropIds.map(cropName).join(', luego ') : PLAN_TITULO.porDefinir,
+        condition,
         intro: NATURALEZA_ESCENARIO[plan.scenario.nature],
       });
-      if (plan.completeness === 'incomplete') {
-        const first = plan.toVerify[0];
-        el.querySelector('[data-slot="state"]')!.replaceChildren(message(role === 'B' ? planBPendiente(first && explainFinding(first)) : FLUJO.planIncompleto));
-      }
       const groups = { signals: plan.reconsiderSignals, reasons: plan.reasons, restrictions: plan.restrictions, actions: plan.actions, toverify: plan.toVerify };
       for (const [name, findings] of Object.entries(groups)) {
         const g = one<HTMLElement>(`[data-group="${name}"]`, el);
@@ -413,6 +482,7 @@ function init(root: HTMLElement) {
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
+    if (step < last) return; // Enter en un paso intermedio lo maneja el avance
     const { input, errors } = readForm();
     for (const g of GROUPS) setError(g, errors[g] ?? null);
     if (!input) {
@@ -427,7 +497,7 @@ function init(root: HTMLElement) {
   ff('refresh').addEventListener('click', () => current && void run(current.input));
   ff('edit').addEventListener('click', () => {
     results.hidden = true;
-    ff('gps').focus();
+    goTo(0);
   });
 
   // ---------- Preguntas ----------
@@ -532,5 +602,6 @@ function init(root: HTMLElement) {
   });
   paintNet();
 
+  goTo(0, false);
   void refreshSaved();
 }

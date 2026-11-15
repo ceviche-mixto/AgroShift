@@ -14,6 +14,7 @@ import {
   ALERTA_FUEGO,
   AVISO_DECISION,
   CAMPOS,
+  COORDENADAS_MANUAL,
   cupoAgotado,
   enTiempo,
   errorDeCampo,
@@ -23,6 +24,9 @@ import {
   FUENTES,
   hace,
   NATURALEZA_ESCENARIO,
+  PAGINA_FUENTES,
+  PASOS,
+  PIE,
   planBPendiente,
   RESULTADO,
   TIPO_EVIDENCIA,
@@ -130,6 +134,24 @@ describe('textos', () => {
     expect(cupoAgotado(40_000).siguientePaso).toBe('Inténtalo de nuevo en 40 segundos.');
     expect(fuenteAtrasada(hace(3 * 3_600_000)).explicacion).toContain('hace 3 horas');
     expect(planBPendiente('el riego.').siguientePaso).toContain('el riego.');
+  });
+});
+
+describe('pasos, pie y fuentes', () => {
+  it('conteo de pasos y pie institucional', () => {
+    expect(PASOS.conteo(2, 5)).toBe('Paso 2 de 5');
+    expect(PIE.evento).toBe('NASA Space Apps Challenge Chiclayo 2026');
+    expect(PIE.aviso).toContain('técnico agrónomo');
+    expect(COORDENADAS_MANUAL).toBe('Ingresar coordenadas manualmente');
+  });
+
+  it('la atribución de GeoNames vive en /fuentes, no en el formulario', () => {
+    const lugares = PAGINA_FUENTES.lugares.items[0]!;
+    expect(lugares.nombre).toContain('GeoNames');
+    expect(lugares.descripcion).toContain('CC BY 4.0');
+    expect(textos(CAMPOS).join(' ')).not.toContain('GeoNames');
+    for (const s of [PAGINA_FUENTES.datos, PAGINA_FUENTES.lugares, PAGINA_FUENTES.herramientas])
+      for (const f of s.items) expect(f.enlace.url).toMatch(/^https:\/\//);
   });
 });
 

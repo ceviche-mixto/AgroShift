@@ -25,8 +25,10 @@ import { alternativeFor, REFERENCE, type Alternative } from './scenarios.ts';
 //
 // DESCARTE (solo reglas activas): rotation_same_crop y thermal_limit (rango absoluto de la ficha).
 // SIN SUSTENTO HÍDRICO (engine.water_support): lluvia sobre el máximo absoluto, o bajo el mínimo
-// absoluto sin riego declarado. No descarta (water_minimum solo avisa), pero el cultivo va al final
-// y su plan queda incompleto.
+// absoluto sin riego declarado. No descarta (water_minimum solo avisa), pero el cultivo va al final.
+// Con agua `limited` la persona ya respondió: el plan es `conditional` (riego suplementario como
+// condición clave, con la lluvia y el mínimo de la ficha como cifras). Con agua `unknown` falta un
+// dato que ella puede aportar: el plan queda `incomplete`.
 //
 // ORDEN (de mayor a menor peso; el primero que difiere decide)
 // 1. con sustento hídrico; 2. solo en less_rain: menor lluvia mínima de la ficha;
@@ -35,19 +37,31 @@ import { alternativeFor, REFERENCE, type Alternative } from './scenarios.ts';
 // 4. dentro de temporada regional respaldada; 5. temperatura en rango óptimo;
 // 6. alterna cereal y leguminosa; 7. orden alfabético de `id`.
 //
-// ESTADO
-// | Situación                                                        | Resultado                         |
-// | Falta POWER, fuente no disponible o cobertura bajo el umbral     | insufficient_evidence + missing   |
-// | Fecha de siembra desconocida                                     | partial: A incompleto sin cultivo |
-// | Cultivo previo desconocido o fuera de catálogo (sin rotación)    | partial: A y B incompletos        |
-// | Agua unknown o limited y la lluvia no cubre el mínimo            | partial: plan incompleto          |
-// | Ningún cultivo distinto con sustento bajo el supuesto del Plan B | partial: B incompleto sin cultivo |
-// | A y B con sustento                                               | ok                                |
+// PLAN B (si ningún otro cultivo tiene sustento bajo el supuesto)
+// 1. Escenario less_rain (agua limitada) y existe un cultivo distinto cuya ficha se da bien con MENOS
+//    lluvia (`rainfall.optimal.min` estrictamente menor que el del Plan A): ese cultivo, también
+//    `conditional` por riego. Es la misma cifra de la ficha que usa el objetivo save_water.
+// 2. Si no, y la lluvia de referencia no alcanza el mínimo de NINGÚN otro cultivo (sin exceso):
+//    descanso con abono verde (`kind: 'fallow'`, `complete`). Se justifica con la lluvia frente al
+//    menor mínimo del catálogo y con la regla rotation-legume-cereal (leguminosa antes del cereal,
+//    sin cuantificar el aporte). La cobertura también necesita agua: se declara como restricción.
+// 3. Si no (p. ej. nada cabe por temperatura), Plan B vacío con `verify.no_alternative`.
+//
+// ESTADO (ResultState) y completitud del plan
+// | Situación                                                        | Resultado                               |
+// | Falta POWER, fuente no disponible o cobertura bajo el umbral     | insufficient_evidence + missing         |
+// | Fecha de siembra desconocida                                     | partial: A incompleto sin cultivo       |
+// | Cultivo previo desconocido o fuera de catálogo (sin rotación)    | partial: A y B incompletos              |
+// | Agua unknown y la lluvia no cubre el mínimo                      | partial: plan incompleto (dato faltante)|
+// | Agua limited y la lluvia no cubre el mínimo, resto respondido    | plan conditional: no cuenta como falta  |
+// | Ningún Plan B posible (ni cultivo, ni descanso)                  | partial: B incompleto sin cultivo       |
+// | A y B complete o conditional                                     | ok                                      |
 // Regla general: falta evidencia climática = insufficient_evidence; falta una respuesta de la
-// persona o respaldo del catálogo = partial con `toVerify`.
+// persona o respaldo del catálogo = partial con `toVerify`; una condición de manejo que la persona
+// ya conoce (riego) = conditional, nunca partial.
 
 /** Cambia si cambian las reglas o la lógica. */
-export const ENGINE_VERSION = '0.1.0';
+export const ENGINE_VERSION = '0.2.0';
 export type EngineResult = Pick<AnalysisResult, 'status' | 'engineVersion' | 'planA' | 'planB' | 'missing'>;
 
 /** Mínimo de días válidos. Mismo criterio de 80 % que usa la ingesta de Giovanni para un mes válido. */
@@ -127,6 +141,7 @@ const unbacked = (c: Candidate, water: WaterLevel) => c.rainExcess || (!c.rainCo
 const emptyPlan = (role: Plan['role'], scenario: Scenario, restrictions: Finding[], toVerify: Finding[]): Plan => ({
   role,
   completeness: 'incomplete',
+  kind: 'crop',
   scenario,
   cropIds: [],
   reasons: [],
@@ -240,7 +255,7 @@ export function evaluateRotation(input: FarmInput, climate: ClimateEvidence): En
   };
 
   // 5. Plan para un candidato bajo un escenario. `alt === null` es la referencia.
-  const planFor = (role: Plan['role'], alt: Alternative | null, c: Candidate | undefined): Plan => {
+  const planFor = (role: Plan['role'], alt: Alternative | null, c: Candidate | undefined, lighterThan?: Candidate): Plan => {
     const scenario = alt?.scenario ?? REFERENCE;
     const water = alt?.water ?? input.water;
     const restrictions = alt
@@ -298,12 +313,23 @@ export function evaluateRotation(input: FarmInput, climate: ClimateEvidence): En
       actions.push(fact('action.secure_irrigation', ENGINE.water, [rain.id], { crop: id }));
       signals.push(fact('signal.less_irrigation', ENGINE.water, [rain.id], { crop: id }));
     } else if (water === 'limited') {
+      // Condición clave de manejo, no un dato faltante: la persona ya dijo que tiene poca agua
       restrictions.push(fact('restriction.rain_below_minimum', waterMin?.id ?? ENGINE.water, [rain.id], numbers));
-      toVerify.push(fact('verify.irrigation_amount', ENGINE.water, [rain.id], { crop: id }));
+      actions.push(fact('action.secure_irrigation', ENGINE.water, [rain.id], { crop: id }));
+      signals.push(fact('signal.less_irrigation', ENGINE.water, [rain.id], { crop: id }));
     } else {
       toVerify.push(fact('verify.water_availability', ENGINE.water, [rain.id], numbers));
     }
-    if (input.goal === 'save_water' && crop.rainfall.optimal.min !== null) {
+    if (lighterThan) {
+      reasons.push(
+        fact('reason.less_water_than_plan_a', ENGINE.water, [], {
+          crop: id,
+          optimalMinMm: crop.rainfall.optimal.min,
+          other: lighterThan.crop.id,
+          otherOptimalMinMm: lighterThan.crop.rainfall.optimal.min,
+        }),
+      );
+    } else if (input.goal === 'save_water' && crop.rainfall.optimal.min !== null) {
       reasons.push(fact('reason.lower_water_need', ENGINE.goal, [], { crop: id, optimalMinMm: crop.rainfall.optimal.min }));
     }
 
@@ -318,10 +344,18 @@ export function evaluateRotation(input: FarmInput, climate: ClimateEvidence): En
     toVerify.push(fact('verify.variety_cycle', ENGINE.cycle, [], { crop: id, days: c.days }));
     if (within(0, crop.ph.absolute) !== null) toVerify.push(fact('verify.soil_ph', ENGINE.soil, [], { crop: id, ...crop.ph.absolute }));
 
-    const complete = !!previous && !unbacked(c, water) && reasons.length > 0;
+    const answered = !!previous && reasons.length > 0 && !c.rainExcess;
+    const completeness: Plan['completeness'] = !answered
+      ? 'incomplete'
+      : !unbacked(c, water)
+        ? 'complete'
+        : water === 'limited'
+          ? 'conditional'
+          : 'incomplete';
     return {
       role,
-      completeness: complete ? 'complete' : 'incomplete',
+      completeness,
+      kind: 'crop',
       scenario,
       cropIds: [id], // un cultivo: no se encadenan campañas sin sustento
       reasons: reasons.slice(0, 12),
@@ -335,8 +369,40 @@ export function evaluateRotation(input: FarmInput, climate: ClimateEvidence): En
   // 6. Plan A en la referencia; Plan B = mejor opción DISTINTA con sustento bajo el supuesto
   const a = rank(input.water, false)[0];
   const alt = alternativeFor(input.water);
+  const others = candidates.filter((c) => c.crop.id !== a?.crop.id);
   const b = rank(alt.water, alt.scenario.id === 'less_rain').find((c) => c.crop.id !== a?.crop.id && !unbacked(c, alt.water));
+
+  // Sin sustento para otro cultivo: el de ficha más ligera (si lo hay) o, si la lluvia no alcanza a ninguno, descanso
+  const need = (c: Candidate) => c.crop.rainfall.optimal.min ?? Infinity;
+  const absMin = (c: Candidate) => c.crop.rainfall.absolute.min ?? Infinity;
+  const lighter =
+    !b && alt.scenario.id === 'less_rain' && a && Number.isFinite(need(a))
+      ? others
+          .filter((c) => !c.rainExcess && need(c) < need(a))
+          .sort((x, y) => need(x) - need(y) || absMin(x) - absMin(y) || (x.crop.id < y.crop.id ? -1 : 1))[0]
+      : undefined;
+  const lowestMin = Math.min(...others.map(absMin));
+  const dry = !b && !lighter && !!a && others.length > 0 && Number.isFinite(lowestMin) && others.every((c) => !c.rainCovers && !c.rainExcess);
+  const fallow = (): Plan => ({
+    role: 'B',
+    completeness: 'complete',
+    kind: 'fallow',
+    scenario: alt.scenario,
+    cropIds: [],
+    reasons: [
+      fact('reason.fallow_no_rain_support', ENGINE.water, [rain.id], { rainMm, minMm: lowestMin }),
+      ...(legumeCereal ? [fact('reason.green_manure_legume', legumeCereal.id, [])] : []),
+    ],
+    restrictions: [
+      fact('restriction.hypothetical', ENGINE.scenario, [rain.id], { scenario: alt.scenario.id, assumption: alt.assumption }),
+      fact('restriction.green_manure_needs_water', ENGINE.water, [rain.id]),
+    ],
+    actions: [fact('action.consult_green_manure', ENGINE.water, [])],
+    reconsiderSignals: [fact('signal.irrigation_available', ENGINE.water, [rain.id])],
+    toVerify: [],
+  });
+
   const planA = planFor('A', null, a);
-  const planB = planFor('B', alt, b);
-  return result(planA.completeness === 'complete' && planB.completeness === 'complete' ? 'ok' : 'partial', planA, planB);
+  const planB = dry ? fallow() : planFor('B', alt, b ?? lighter, lighter && a);
+  return result(planA.completeness !== 'incomplete' && planB.completeness !== 'incomplete' ? 'ok' : 'partial', planA, planB);
 }

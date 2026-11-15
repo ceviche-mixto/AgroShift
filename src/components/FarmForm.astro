@@ -1,18 +1,34 @@
 ---
-import { CAMPOS } from '../content/es.ts';
+import { CAMPOS, PASOS } from '../content/es.ts';
 import LocationField from './LocationField.astro';
 
 const { ubicacion, cultivo, objetivo, agua, siembra } = CAMPOS;
 ---
 <form data-ff="form" novalidate class="formulario">
-  <fieldset class="grupo" aria-describedby="ayuda-ubicacion">
+  <div class="paso-encabezado">
+    <p class="paso-conteo" data-ff="step-count" aria-live="polite">{PASOS.conteo(1, 5)}</p>
+    <div
+      class="progreso"
+      data-ff="progress"
+      role="progressbar"
+      aria-label={PASOS.avance}
+      aria-valuemin="0"
+      aria-valuemax="5"
+      aria-valuenow="1"
+      aria-valuetext={PASOS.conteo(1, 5)}
+    >
+      <span class="progreso__barra" data-ff="progress-bar" style="width: 20%"></span>
+    </div>
+  </div>
+
+  <fieldset class="grupo" data-ff-step="ubicacion" aria-describedby="ayuda-ubicacion">
     <legend class="grupo__titulo">{ubicacion.etiqueta}</legend>
     <p id="ayuda-ubicacion" class="grupo__ayuda">{ubicacion.ayuda}</p>
     <LocationField />
     <p id="error-ubicacion" data-ff-error="ubicacion" class="grupo__error" hidden></p>
   </fieldset>
 
-  <fieldset class="grupo" aria-describedby="ayuda-cultivo">
+  <fieldset class="grupo" data-ff-step="cultivo" aria-describedby="ayuda-cultivo" hidden>
     <legend class="grupo__titulo">{cultivo.etiqueta}</legend>
     <p id="ayuda-cultivo" class="grupo__ayuda">{cultivo.ayuda}</p>
     <div class="opciones">
@@ -44,7 +60,7 @@ const { ubicacion, cultivo, objetivo, agua, siembra } = CAMPOS;
     <p id="error-cultivo" data-ff-error="cultivo" class="grupo__error" hidden></p>
   </fieldset>
 
-  <fieldset class="grupo" aria-describedby="ayuda-objetivo">
+  <fieldset class="grupo" data-ff-step="objetivo" aria-describedby="ayuda-objetivo" hidden>
     <legend class="grupo__titulo">{objetivo.etiqueta}</legend>
     <p id="ayuda-objetivo" class="grupo__ayuda">{objetivo.ayuda}</p>
     <div class="opciones">
@@ -64,7 +80,7 @@ const { ubicacion, cultivo, objetivo, agua, siembra } = CAMPOS;
     <p id="error-objetivo" data-ff-error="objetivo" class="grupo__error" hidden></p>
   </fieldset>
 
-  <fieldset class="grupo" aria-describedby="ayuda-agua">
+  <fieldset class="grupo" data-ff-step="agua" aria-describedby="ayuda-agua" hidden>
     <legend class="grupo__titulo">{agua.etiqueta}</legend>
     <p id="ayuda-agua" class="grupo__ayuda">{agua.ayuda}</p>
     <div class="opciones">
@@ -84,7 +100,7 @@ const { ubicacion, cultivo, objetivo, agua, siembra } = CAMPOS;
     <p id="error-agua" data-ff-error="agua" class="grupo__error" hidden></p>
   </fieldset>
 
-  <fieldset class="grupo grupo--siembra" aria-describedby="ayuda-siembra">
+  <fieldset class="grupo grupo--siembra" data-ff-step="siembra" aria-describedby="ayuda-siembra" hidden>
     <legend class="grupo__titulo">{siembra.etiqueta}</legend>
     <p id="ayuda-siembra" class="grupo__ayuda">{siembra.ayuda}</p>
     <div class="opciones">
@@ -122,8 +138,11 @@ const { ubicacion, cultivo, objetivo, agua, siembra } = CAMPOS;
     <p id="error-siembra" data-ff-error="siembra" class="grupo__error" hidden></p>
   </fieldset>
 
-  <div class="pila-corta">
-    <button type="submit" class="boton boton--principal" data-ff="submit">Ver mi plan</button>
-    <p class="texto-suave">Después del resultado podrás sumar datos de tu suelo y de tus cultivos anteriores.</p>
+  <div class="paso-acciones">
+    <button type="button" class="opcion" data-ff="back" hidden>{PASOS.atras}</button>
+    <button type="button" class="boton" data-ff="next" aria-describedby="paso-pista" disabled>{PASOS.siguiente}</button>
+    <button type="submit" class="boton boton--principal" data-ff="submit" aria-describedby="paso-pista" hidden disabled>Ver mi plan</button>
   </div>
+  <p id="paso-pista" class="texto-suave" data-ff="step-hint">{PASOS.pista}</p>
+  <p class="texto-suave" data-ff="last-note" hidden>Después del resultado podrás sumar datos de tu suelo y de tus cultivos anteriores.</p>
 </form>

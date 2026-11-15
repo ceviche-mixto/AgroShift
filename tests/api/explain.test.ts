@@ -13,6 +13,7 @@ const finding = (id: string): Finding => ({ id, ruleId: 'engine.test', evidenceI
 const plan = (role: 'A' | 'B'): Plan => ({
   role,
   completeness: 'complete',
+  kind: 'crop',
   scenario: role === 'A' ? { id: 'reference', nature: 'observed_reference' } : { id: 'limited_water', nature: 'hypothetical' },
   cropIds: [role === 'A' ? 'maize' : 'cowpea'],
   reasons: [finding(`${role}.razon.1`), finding(`${role}.razon.2`)],

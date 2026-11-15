@@ -1,0 +1,32 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { PAGINA_FUENTES as P } from '../content/es.ts';
+
+const secciones = [P.datos, P.lugares, P.herramientas];
+---
+<BaseLayout title={`${P.titulo} · AgroShift`} description="De dónde salen los datos de AgroShift y con qué herramientas se hizo.">
+  <div class="pila-grande">
+    <div class="pila-corta">
+      <h1 class="text-3xl font-bold leading-tight">{P.titulo}</h1>
+      <p class="texto-suave">{P.intro}</p>
+    </div>
+
+    {secciones.map((s, i) => (
+      <section class="pila" aria-labelledby={`fuentes-${i}`}>
+        <h2 id={`fuentes-${i}`} class="subtitulo subtitulo--grande">{s.titulo}</h2>
+        <ul class="fuentes__lista">
+          {s.items.map((f) => (
+            <li class="fuente">
+              <h3 class="subtitulo">{f.nombre}</h3>
+              <p>{f.descripcion}</p>
+              <p class="texto-suave dato-tecnico">{f.producto}</p>
+              <p><a class="enlace" href={f.enlace.url} target="_blank" rel="noopener noreferrer">{f.enlace.texto}</a></p>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))}
+
+    <p><a class="boton" href="/">{P.volver}</a></p>
+  </div>
+</BaseLayout>

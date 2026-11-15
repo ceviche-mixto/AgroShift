@@ -4,7 +4,7 @@ import india from '../../src/data/nasa/india.json' with { type: 'json' };
 import kenia from '../../src/data/nasa/kenia.json' with { type: 'json' };
 import type { ClimateEvidence, EvidenceRecord, FarmInput, Finding, Plan } from '../../src/domain/contracts.ts';
 import { CROPS, RULES } from '../../src/domain/crops.ts';
-import { explainFinding, FINDING_IDS } from '../../src/domain/explain.ts';
+import { explainFinding, FINDING_IDS, needsIrrigation } from '../../src/domain/explain.ts';
 import { ENGINE_VERSION, evaluateRotation, type EngineResult } from '../../src/domain/rotation.ts';
 import { analysisResultSchema, climateEvidenceSchema, evidenceRecordSchema } from '../../src/domain/schemas.ts';
 
@@ -154,22 +154,53 @@ describe('agua', () => {
     );
   });
 
-  it('sin lluvia suficiente para ningún cultivo, agua limitada o desconocida deja el plan incompleto', () => {
+  it('sin lluvia suficiente: agua limitada es una condición de riego; agua desconocida es un dato faltante', () => {
     const desert = synthetic(() => 25, 100);
     expect(run(input('enough'), desert).planA?.completeness).toBe('complete');
 
+    // «Tengo poca agua» ya es una respuesta: el plan es viable con riego suplementario, no «a medias»
     const limited = run(input('limited'), desert);
-    expect(limited.status).toBe('partial');
-    expect(limited.planA?.completeness).toBe('incomplete');
+    expect(limited.status).toBe('ok');
+    expect(limited.planA?.completeness).toBe('conditional');
     expect(limited.planA?.restrictions).toContainEqual(expect.objectContaining({ id: 'restriction.rain_below_minimum', ruleId: 'water-minimum' }));
-    expect(ids(limited.planA!.toVerify)).toContain('verify.irrigation_amount');
-    expect(limited.planB).toMatchObject({ completeness: 'incomplete', cropIds: [], toVerify: [{ id: 'verify.no_alternative' }] });
+    expect(ids(limited.planA!.actions)).toContain('action.secure_irrigation');
+    expect(ids(limited.planA!.toVerify)).not.toContain('verify.water_availability');
+    expect(needsIrrigation(limited.planA)).toBe(true);
+    expect(limited.planB?.completeness).not.toBe('incomplete');
 
     const unknown = run(input('unknown'), desert);
     expect(unknown.status).toBe('partial');
+    expect(unknown.planA?.completeness).toBe('incomplete');
     expect(ids(unknown.planA!.toVerify)).toContain('verify.water_availability');
     // water-minimum solo aplica con agua limitada
     expect(findingsOf({ ...unknown, planB: null }).map((f) => f.ruleId)).not.toContain('water-minimum');
+  });
+
+  it('Plan B por agua: cultivo de ficha más ligera, o descanso con abono verde si no hay uno', () => {
+    const desert = synthetic(() => 25, 100);
+    const need = (id: string) => CROPS.find((c) => c.id === id)!.rainfall.optimal.min!;
+    // Con agua limitada, B es un cultivo que se da bien con menos lluvia que el de A
+    const lighter = run(farm({ previous: 'arroz', water: 'limited' }), desert);
+    const [a] = lighter.planA!.cropIds;
+    const [b] = lighter.planB!.cropIds;
+    expect(lighter.planB).toMatchObject({ kind: 'crop', completeness: 'conditional' });
+    expect(need(b!)).toBeLessThan(need(a!));
+    expect(lighter.planB?.reasons).toContainEqual(expect.objectContaining({ id: 'reason.less_water_than_plan_a', params: expect.objectContaining({ crop: b, other: a }) }));
+
+    // Si el Plan A ya es el de menor requerimiento, no hay cultivo más ligero: descanso, no un plan vacío
+    const lightest = run(farm({ previous: 'arroz', water: 'limited', goal: 'save_water' }), desert);
+    expect(crops(lightest.planA)).toEqual(['sorghum']);
+    expect(lightest.status).toBe('ok');
+    expect(lightest.planB).toMatchObject({ kind: 'fallow', completeness: 'complete', cropIds: [], toVerify: [] });
+    expect(ids(lightest.planB!.reasons)).toEqual(['reason.fallow_no_rain_support', 'reason.green_manure_legume']);
+    expect(lightest.planB?.reasons[0]).toMatchObject({ params: { rainMm: 100, minMm: 300 } });
+    expect(lightest.planB?.reasons[1]).toMatchObject({ ruleId: 'rotation-legume-cereal' });
+    // La cobertura también necesita agua, y se dice
+    expect(ids(lightest.planB!.restrictions)).toEqual(['restriction.hypothetical', 'restriction.green_manure_needs_water']);
+    expect(needsIrrigation(lightest.planB)).toBe(false);
+
+    // Con agua suficiente, el supuesto del Plan B es «sin riego»: ningún cultivo se sostiene, así que descanso
+    expect(run(input('enough'), desert).planB).toMatchObject({ kind: 'fallow', completeness: 'complete' });
   });
 });
 
@@ -283,7 +314,7 @@ describe('evidencia real de los tres casos', () => {
     run({ ...farm({ previous: c.previous, ...o }), location: { lat: c.lat, lon: c.lon, origin: 'gps', accuracyM: 30 } }, c.climate);
   const planting = (date: string): FarmInput['planting'] => ({ status: 'known', date, precision: 'day' });
 
-  it('no lanza, valida el contrato y al menos un caso entrega dos rotaciones sustentadas', () => {
+  it('no lanza, valida el contrato y los tres casos entregan Plan A y Plan B', () => {
     const ok = new Set<string>();
     for (const c of cases) {
       for (const date of ['2026-12-01', '2028-02-29', '2027-03-15', '2027-06-15', '2027-09-01']) {
@@ -300,7 +331,7 @@ describe('evidencia real de los tres casos', () => {
         }
       }
     }
-    expect([...ok]).toEqual(['India', 'Kenia']);
+    expect([...ok]).toEqual(['Perú', 'India', 'Kenia']);
   });
 
   it('India: dos rotaciones completas y la temporada regional respaldada del ragi', () => {
@@ -322,14 +353,46 @@ describe('evidencia real de los tres casos', () => {
     expect(ids(offSeason.planA!.actions)).toContain('action.consult_local_technician');
   });
 
-  it('Perú: la lluvia de referencia no sustenta un Plan B sin riego', () => {
+  it('Perú: la lluvia de referencia no sustenta un Plan B con cultivo sin riego, y el Plan B es descanso', () => {
     const enough = at(cases[0]!, { planting: planting('2026-12-01') });
-    expect(enough.status).toBe('partial');
+    expect(enough.status).toBe('ok');
     expect(enough.planA).toMatchObject({ completeness: 'complete', cropIds: ['chickpea'] });
     expect(enough.planA?.restrictions).toContainEqual(
       expect.objectContaining({ id: 'restriction.depends_on_irrigation', params: { crop: 'chickpea', rainMm: 169, minMm: 300 } }),
     );
-    expect(enough.planB).toMatchObject({ completeness: 'incomplete', cropIds: [], toVerify: [{ id: 'verify.no_alternative', params: { rainMm: 169 } }] });
-    expect(at(cases[0]!, { water: 'limited', planting: planting('2026-12-01') }).planA?.completeness).toBe('incomplete');
+    expect(enough.planB).toMatchObject({ kind: 'fallow', completeness: 'complete', cropIds: [] });
+    expect(enough.planB?.reasons[0]).toMatchObject({ id: 'reason.fallow_no_rain_support', params: { rainMm: 169, minMm: 300 } });
+  });
+
+  it('Chiclayo + arroz + poca agua: Plan A principal con condición de riego, un solo aviso y Plan B real', () => {
+    const r = at(cases[0]!, { water: 'limited', planting: planting('2026-12-01') });
+    // Respondió las cinco preguntas: no es «a medias» ni «incompleto»
+    expect(r.status).toBe('ok');
+    expect(r.missing).toEqual([]);
+    const { planA, planB } = r;
+    expect(planA).toMatchObject({ completeness: 'conditional', kind: 'crop', cropIds: ['chickpea'] });
+    expect(planA!.reasons.length).toBeGreaterThan(0);
+    // La condición cita lluvia frente al mínimo de la ficha y aparece una sola vez como restricción
+    const irrigation = planA!.restrictions.filter((f) => /irrigation|rain_below_minimum/.test(f.id));
+    expect(irrigation).toHaveLength(1);
+    expect(irrigation[0]).toMatchObject({ id: 'restriction.rain_below_minimum', ruleId: 'water-minimum', params: { crop: 'chickpea', rainMm: 169, minMm: 300 } });
+    expect(explainFinding(irrigation[0]!)).toContain('riego suplementario');
+    expect(needsIrrigation(planA)).toBe(true);
+    // Nada en «Qué revisar» repite la condición de riego ni pide un dato que ya dio
+    expect(ids(planA!.toVerify)).toEqual(['verify.regional_calendar', 'verify.variety_cycle', 'verify.soil_ph']);
+    // Plan B: alternativa real de menor requerimiento hídrico, con la ficha como respaldo
+    expect(planB).toMatchObject({ completeness: 'conditional', kind: 'crop', cropIds: ['sorghum'] });
+    expect(planB!.reasons).toContainEqual(
+      expect.objectContaining({ id: 'reason.less_water_than_plan_a', params: { crop: 'sorghum', optimalMinMm: 400, other: 'chickpea', otherOptimalMinMm: 600 } }),
+    );
+    expect(planB!.scenario.nature).toBe('hypothetical');
+    // Y si el Plan A ya fuera el más ligero, el Plan B sería descanso con abono verde, nunca un plan vacío
+    const lightest = at(cases[0]!, { water: 'limited', goal: 'save_water', planting: planting('2026-12-01') });
+    expect(crops(lightest.planA)).toEqual(['sorghum']);
+    expect(lightest.planB).toMatchObject({ kind: 'fallow', completeness: 'complete' });
+    // Agua desconocida sí es un dato por aportar
+    const unknown = at(cases[0]!, { water: 'unknown', planting: planting('2026-12-01') });
+    expect(unknown.status).toBe('partial');
+    expect(unknown.planA?.completeness).toBe('incomplete');
   });
 });

@@ -1,9 +1,9 @@
 /* AgroShift service worker (JS plano, sin build).
  *
- * Lista y versión: en `install` y a cada mensaje `agroshift:prepare` el worker descarga `/` y
- * `/offline/`, extrae de su HTML las URLs de `<link>`/`<script>` y todo `/_astro/*`, sigue
+ * Lista y versión: en `install` y a cada mensaje `agroshift:prepare` el worker descarga `/`,
+ * `/offline/` y `/fuentes/`, extrae de su HTML las URLs de `<link>`/`<script>` y todo `/_astro/*`, sigue
  * recursivamente los imports (`./x.js`, `url(...)`, mapas de dependencias de Vite) de cada JS/CSS y
- * añade los JSON de /data/nasa/. La caché se llama `agroshift-<hash>`: el hash cubre ambos HTML, la
+ * añade los JSON de /data/nasa/. La caché se llama `agroshift-<hash>`: el hash cubre los HTML, la
  * lista de URLs y el contenido de los JSON, así que cambia en cada despliegue. Un manifiesto (que se
  * escribe al final) marca la caché como completa; las demás `agroshift-*` se borran.
  * Como /sw.js no cambia entre despliegues, el cliente reenvía `prepare` en cada carga.
@@ -12,7 +12,7 @@
  */
 var PREFIX = 'agroshift-';
 var MANIFEST = '/__agroshift_manifest__';
-var ROOTS = ['/', '/offline/'];
+var ROOTS = ['/', '/offline/', '/fuentes/'];
 var DATA = ['/data/nasa/chiclayo.json', '/data/nasa/india.json', '/data/nasa/kenia.json'];
 var MAX_FILES = 300;
 var NAVIGATION_FALLBACK_STATUS = 500;

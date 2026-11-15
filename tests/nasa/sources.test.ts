@@ -111,18 +111,21 @@ describe('análisis con datos reales de tres continentes', () => {
     expect(second).toEqual(first);
   });
 
-  it('Perú: con la lluvia de referencia no hay segunda rotación sustentada, y se dice qué verificar', async () => {
+  it('Perú: con la lluvia de referencia ningún cultivo se sostiene sin riego; el riego es condición y el Plan B nunca queda vacío', async () => {
     for (const water of ['enough', 'limited', 'unknown'] as const) {
       const { result } = await run(input(peru, 'arroz', water, '2026-12-01'));
-      expect(result.status).toBe('partial');
-      expect(result.planB?.completeness).toBe('incomplete');
-      expect(result.planB?.toVerify.length).toBeGreaterThan(0);
+      expect(result.planB?.completeness).not.toBe('incomplete');
+      expect(result.planB?.kind === 'fallow' || result.planB!.cropIds.length > 0).toBe(true);
+      // Solo falta un dato cuando la persona no sabe cuánta agua tiene
+      expect(result.status).toBe(water === 'unknown' ? 'partial' : 'ok');
     }
-    // Solo con riego suficiente declarado hay Plan A completo, y depende de ese riego
+    // Con riego suficiente el Plan A es completo y depende de ese riego
     const withWater = (await run(input(peru, 'arroz', 'enough', '2026-12-01'))).result.planA!;
     expect(withWater.completeness).toBe('complete');
     expect(withWater.restrictions.map((f) => f.id)).toContain('restriction.depends_on_irrigation');
-    expect((await run(input(peru, 'arroz', 'limited', '2026-12-01'))).result.planA?.completeness).toBe('incomplete');
+    // Con poca agua es condicionado, no incompleto
+    expect((await run(input(peru, 'arroz', 'limited', '2026-12-01'))).result.planA?.completeness).toBe('conditional');
+    expect((await run(input(peru, 'arroz', 'unknown', '2026-12-01'))).result.planA?.completeness).toBe('incomplete');
   });
 
   it('fuera de las celdas con respaldo y sin red no hay evidencia: 429 con reintento, sin plan inventado', async () => {

@@ -292,6 +292,16 @@ export const AVISO_DECISION =
 
 export const ROL_PLAN = { A: 'Plan A', B: 'Plan B' } as const;
 
+/**
+ * Títulos del plan y su insignia. La insignia reemplaza a las cajas de aviso por plan:
+ * `riego` es una condición de manejo de un plan completo; `falta` solo sale si la persona puede aportar un dato.
+ */
+export const PLAN_INSIGNIA = {
+  riego: 'Requiere riego suplementario',
+  falta: 'Falta información',
+} as const;
+export const PLAN_TITULO = { descanso: 'Descanso con abono verde', porDefinir: 'Cultivo por definir' } as const;
+
 /** De dónde salió el dato de una fuente (slot `origin` de la plantilla `source`). */
 export const ORIGEN_DATO: Record<CacheOrigin, string> = {
   live: 'Consultado ahora',
@@ -355,12 +365,6 @@ export const FLUJO = {
     explicacion: 'No tenemos datos guardados de tu zona para calcular un plan sin conexión.',
     siguientePaso: 'Conéctate a internet y vuelve a intentar.',
   },
-  planIncompleto: {
-    tono: 'aviso',
-    titulo: 'Plan incompleto',
-    explicacion: 'Todavía falta información para completar este plan.',
-    siguientePaso: 'Mira lo que debes revisar más abajo.',
-  },
   sinPlan: {
     tono: 'sindato',
     titulo: 'Sin opción por ahora',
@@ -387,3 +391,96 @@ export const UBICACION_EXTRA = {
   unaCoincidencia: 'Encontramos este lugar. Confírmalo para usarlo.',
   escribeLocalidad: 'Escribe el nombre de tu localidad para buscarla.',
 } as const;
+
+// ---------- Formulario por pasos, pie de página y página de fuentes ----------
+
+export const PASOS = {
+  conteo: (n: number, total: number) => `Paso ${n} de ${total}`,
+  avance: 'Avance de tus respuestas',
+  siguiente: 'Siguiente',
+  atras: 'Atrás',
+  pista: 'Responde esta pregunta para continuar.',
+} as const;
+
+/** Paso 1: las coordenadas se escriben solo si la persona lo pide. */
+export const COORDENADAS_MANUAL = 'Ingresar coordenadas manualmente';
+
+export const PIE = {
+  nombre: 'AgroShift',
+  fuentes: 'Fuentes científicas y herramientas',
+  aviso: 'Uso orientativo: AgroShift no reemplaza la revisión en tu campo ni a un técnico agrónomo.',
+  evento: 'NASA Space Apps Challenge Chiclayo 2026',
+  equipo: 'Equipo: por completar',
+} as const;
+
+export interface FuenteEnlace {
+  nombre: string;
+  descripcion: string;
+  /** Producto y versión tal como los publica la fuente. */
+  producto: string;
+  enlace: { texto: string; url: string };
+}
+
+export const PAGINA_FUENTES = {
+  titulo: 'Fuentes científicas y herramientas',
+  intro: 'AgroShift usa datos abiertos de la NASA y de otras fuentes públicas. Aquí está de dónde sale cada dato y con qué herramientas se hizo la aplicación.',
+  datos: {
+    titulo: 'Datos científicos',
+    items: [
+      {
+        nombre: 'NASA POWER',
+        descripcion: 'Clima diario de tu zona: temperatura, lluvia, humedad del aire y luz del sol.',
+        producto: 'POWER Daily API, comunidad AG (NASA Langley Research Center)',
+        enlace: { texto: 'power.larc.nasa.gov', url: 'https://power.larc.nasa.gov/' },
+      },
+      {
+        nombre: 'NASA SMAP',
+        descripcion: 'Humedad del suelo en la superficie y en la zona de las raíces.',
+        producto: 'SMAP L4 Global 3-hourly 9 km (SPL4SMGP v008), NASA NSIDC DAAC',
+        enlace: { texto: 'doi.org/10.5067/T5RUATAQREF8', url: 'https://doi.org/10.5067/T5RUATAQREF8' },
+      },
+      {
+        nombre: 'NASA Giovanni',
+        descripcion: 'Tendencia de la temperatura del aire de tu zona, con datos del modelo GLDAS.',
+        producto: 'GLDAS Noah Land Surface Model L4 3-hourly 0.25 deg, versión 2.1, NASA GES DISC',
+        enlace: { texto: 'doi.org/10.5067/E7TYRXPJKWOQ', url: 'https://doi.org/10.5067/E7TYRXPJKWOQ' },
+      },
+      {
+        nombre: 'NASA FIRMS',
+        descripcion: 'Calor detectado por satélite cerca de tu campo, casi en tiempo real.',
+        producto: 'VIIRS NOAA-20, tiempo casi real',
+        enlace: { texto: 'firms.modaps.eosdis.nasa.gov', url: 'https://firms.modaps.eosdis.nasa.gov/' },
+      },
+    ],
+  },
+  lugares: {
+    titulo: 'Búsqueda de localidades',
+    items: [
+      {
+        nombre: 'GeoNames, a través de Open-Meteo',
+        descripcion: 'Nombres y coordenadas de los lugares que buscas. Licencia CC BY 4.0.',
+        producto: 'Open-Meteo Geocoding API, con datos de GeoNames',
+        enlace: { texto: 'open-meteo.com/en/docs/geocoding-api', url: 'https://open-meteo.com/en/docs/geocoding-api' },
+      },
+    ],
+  },
+  herramientas: {
+    titulo: 'Herramientas con las que se hizo',
+    items: [
+      { nombre: 'Astro', descripcion: 'Páginas rápidas que funcionan también con poca señal.', producto: 'Astro', enlace: { texto: 'astro.build', url: 'https://astro.build/' } },
+      { nombre: 'Tailwind CSS', descripcion: 'Estilos de la aplicación.', producto: 'Tailwind CSS', enlace: { texto: 'tailwindcss.com', url: 'https://tailwindcss.com/' } },
+      { nombre: 'TypeScript y Zod', descripcion: 'Código con tipos y revisión de los datos que entran.', producto: 'TypeScript, Zod', enlace: { texto: 'zod.dev', url: 'https://zod.dev/' } },
+      { nombre: 'Supabase', descripcion: 'Copia compartida de los datos y control de consultas.', producto: 'Supabase', enlace: { texto: 'supabase.com', url: 'https://supabase.com/' } },
+      { nombre: 'Amazon Bedrock', descripcion: 'Ayuda con inteligencia artificial para explicar tu resultado, solo con los datos del plan.', producto: 'Amazon Bedrock (AWS)', enlace: { texto: 'aws.amazon.com/bedrock', url: 'https://aws.amazon.com/bedrock/' } },
+      { nombre: 'Vercel', descripcion: 'Donde se publica la aplicación.', producto: 'Vercel', enlace: { texto: 'vercel.com', url: 'https://vercel.com/' } },
+    ],
+  },
+  volver: 'Volver al inicio',
+} as const satisfies {
+  titulo: string;
+  intro: string;
+  datos: { titulo: string; items: readonly FuenteEnlace[] };
+  lugares: { titulo: string; items: readonly FuenteEnlace[] };
+  herramientas: { titulo: string; items: readonly FuenteEnlace[] };
+  volver: string;
+};

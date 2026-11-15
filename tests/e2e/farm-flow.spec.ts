@@ -15,17 +15,40 @@ const NOW = new Date('2026-11-15T12:00:00Z');
 const indiaInput = (extra: Partial<FarmInput> = {}): FarmInput =>
   farm(12.97, 77.59, { planting: { status: 'known', date: '2027-06-01', precision: 'month' }, ...extra });
 
-async function fillForm(page: Page, o: { coords?: { lat: string; lon: string }; crop?: string; goal?: string; water?: string } = {}) {
-  const { lat, lon } = o.coords ?? INDIA;
+// El formulario es un quiz de 5 pasos: «Siguiente» solo se habilita con el paso respondido.
+async function next(page: Page, times = 1) {
+  for (let i = 0; i < times; i++) await page.getByRole('button', { name: 'Siguiente' }).click();
+}
+async function back(page: Page, times = 1) {
+  for (let i = 0; i < times; i++) await page.getByRole('button', { name: 'Atrás' }).click();
+}
+const stepLabel = (page: Page, n: number) => expect(page.locator('[data-ff="step-count"]')).toHaveText(`Paso ${n} de 5`);
+
+/** Las coordenadas están ocultas por defecto: se abren con el enlace discreto del paso 1. */
+async function setCoords(page: Page, lat: string, lon: string) {
+  const toggle = page.getByRole('button', { name: 'Ingresar coordenadas manualmente' });
+  if ((await toggle.getAttribute('aria-expanded')) !== 'true') await toggle.click();
   await page.getByLabel('Latitud').fill(lat);
   await page.getByLabel('Longitud').fill(lon);
+}
+
+/** Recorre los 5 pasos desde el primero y se queda en el último, listo para enviar. */
+async function fillForm(page: Page, o: { coords?: { lat: string; lon: string }; crop?: string; goal?: string; water?: string } = {}) {
+  const { lat, lon } = o.coords ?? INDIA;
+  await setCoords(page, lat, lon);
+  await next(page);
   await page.getByRole('radio', { name: 'Lo coseché por última vez' }).check();
   await page.getByLabel('Nombre del cultivo').fill(o.crop ?? 'Maíz');
+  await next(page);
   await page.getByRole('radio', { name: o.goal ?? '¿Qué puedo sembrar después?' }).check();
+  await next(page);
   await page.getByRole('radio', { name: o.water ?? 'Tengo suficiente agua' }).check();
+  await next(page);
   await page.getByRole('radio', { name: 'Sé solo el mes' }).check();
   await page.getByLabel('Mes de siembra').fill('2027-06');
 }
+/** Desde «Cambiar mis respuestas» (paso 1, datos conservados) hasta el último paso. */
+const toLastStep = (page: Page) => next(page, 4);
 const submit = (page: Page) => page.getByRole('button', { name: 'Ver mi plan' }).click();
 const planA = (page: Page) => page.locator('[data-ff="plan-a"]');
 
@@ -74,15 +97,83 @@ test.describe('formulario y resultado', () => {
     }
   });
 
-  test('errores por campo: enfoca el primero, marca aria-invalid y anuncia en la región de estado', async ({ page }) => {
+  test('quiz de 5 pasos: avance accesible, «Siguiente» exige respuesta y «Atrás» conserva los datos', async ({ page }) => {
+    await page.goto('/');
+    await stepLabel(page, 1);
+    await expect(page.locator('[data-ff="step-count"]')).toHaveAttribute('aria-live', 'polite');
+    const bar = page.getByRole('progressbar');
+    await expect(bar).toHaveAttribute('aria-valuenow', '1');
+    await expect(bar).toHaveAttribute('aria-valuemax', '5');
+    await expect(page.getByRole('button', { name: 'Atrás' })).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Ver mi plan' })).toBeHidden();
+
+    // Una sola pregunta visible, y sin coordenadas a la vista
+    await expect(page.getByText('¿Dónde está tu campo?')).toBeVisible();
+    await expect(page.getByText('¿Qué cultivas o qué cosechaste por última vez?')).toBeHidden();
+    await expect(page.getByLabel('Latitud')).toBeHidden();
+    await expect(page.getByText('GeoNames')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Siguiente' })).toBeDisabled();
+
+    const toggle = page.getByRole('button', { name: 'Ingresar coordenadas manualmente' });
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    await page.getByLabel('Latitud').fill('12,97');
+    await expect(page.getByRole('button', { name: 'Siguiente' })).toBeDisabled(); // falta la longitud
+    await page.getByLabel('Longitud').fill('77,59');
+    await next(page);
+
+    await stepLabel(page, 2);
+    await expect(bar).toHaveAttribute('aria-valuenow', '2');
+    await expect(page.getByRole('radio', { name: 'Lo cultivo ahora' })).toBeFocused();
+    await expect(page.getByRole('button', { name: 'Siguiente' })).toBeDisabled(); // falta el cultivo
+    await page.getByLabel('Nombre del cultivo').fill('Maíz');
+    await next(page);
+    await stepLabel(page, 3);
+    await expect(page.getByRole('button', { name: 'Siguiente' })).toBeDisabled();
+    await page.getByRole('radio', { name: 'Quiero cuidar mi suelo' }).check();
+
+    // Atrás conserva todo lo escrito
+    await back(page, 2);
+    await stepLabel(page, 1);
+    await expect(page.getByLabel('Latitud')).toHaveValue('12,97');
+    await next(page);
+    await expect(page.getByLabel('Nombre del cultivo')).toHaveValue('Maíz');
+    await next(page);
+    await expect(page.getByRole('radio', { name: 'Quiero cuidar mi suelo' })).toBeChecked();
+    await page.getByRole('radio', { name: 'Quiero cuidar mi suelo' }).check();
+    await next(page);
+    await page.getByRole('radio', { name: 'Tengo poca agua' }).check();
+    await next(page);
+    await stepLabel(page, 5);
+    await expect(page.getByRole('button', { name: 'Siguiente' })).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Ver mi plan' })).toBeVisible();
+  });
+
+  test('Enter avanza solo si la respuesta es válida', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Ingresar coordenadas manualmente' }).click();
+    await page.getByLabel('Latitud').fill('12,97');
+    await page.getByLabel('Latitud').press('Enter');
+    await stepLabel(page, 1);
+    await page.getByLabel('Longitud').fill('77,59');
+    await page.getByLabel('Longitud').press('Enter');
+    await stepLabel(page, 2);
+  });
+
+  test('un error del servidor en un paso anterior lleva a ese paso, marca aria-invalid y se limpia al corregir', async ({ page, context }) => {
     await page.goto('/');
     await expect(page.locator('[data-ff="status"]')).toHaveAttribute('role', 'status');
+    await context.route('**/api/analyze', (route) =>
+      json(route, { contractVersion: 1, status: 'invalid_input', issues: [{ path: 'water', code: 'invalid' }] }, 400),
+    );
+    await fillForm(page);
     await submit(page);
-    await expect(page.locator('#error-ubicacion')).toBeVisible();
-    await expect(page.locator('#error-objetivo')).toBeVisible();
     await expect(page.locator('[data-ff="status"]')).toContainText('Revisa tus respuestas');
-    await expect(page.getByLabel('Nombre de tu localidad')).toBeFocused();
-    await expect(page.getByLabel('Latitud')).toHaveAttribute('aria-invalid', 'true');
+    await stepLabel(page, 4);
+    await expect(page.locator('#error-agua')).toBeVisible();
+    await expect(page.getByRole('radio', { name: 'Tengo suficiente agua' })).toHaveAttribute('aria-invalid', 'true');
+    await expect(page.getByRole('radio', { name: 'Tengo suficiente agua' })).toBeFocused();
     // Corregir un campo limpia su error sin esperar al próximo envío
     await page.getByRole('radio', { name: 'Tengo poca agua' }).check();
     await expect(page.locator('#error-agua')).toBeHidden();
@@ -93,26 +184,33 @@ test.describe('formulario y resultado', () => {
     await page.goto('/');
     await page.getByRole('button', { name: 'Usar mi ubicación' }).click();
     await expect(page.locator('[data-ff="location-status"]')).toContainText('No pudimos usar tu ubicación');
+    // Si falla el GPS, el aviso manda a escribir coordenadas: quedan a la vista
+    await expect(page.getByLabel('Latitud')).toBeVisible();
 
     await page.getByLabel('Latitud').focus();
     const k = page.keyboard;
     await k.type('12,97');
     await k.press('Tab');
     await k.type('77,59');
-    await k.press('Tab'); // tipo de cultivo (marcado "Lo cultivo ahora")
+    await k.press('Enter'); // avanza al paso 2
+    await stepLabel(page, 2);
+    await expect(page.getByRole('radio', { name: 'Lo cultivo ahora' })).toBeFocused(); // foco al primer control del paso
     await k.press('Tab'); // nombre del cultivo
     await k.type('Maíz');
-    await k.press('Tab'); // "No sé"
-    await k.press('Tab'); // objetivo: primer radio
-    await k.press('Space');
-    await k.press('Tab'); // agua
-    await k.press('Space');
-    await k.press('Tab'); // precisión de la siembra (día)
-    await k.press('ArrowRight'); // mes
+    await k.press('Enter');
+    await stepLabel(page, 3);
+    await k.press('Space'); // objetivo: primer radio, con el foco ya puesto
+    await k.press('Enter');
+    await stepLabel(page, 4);
+    await k.press('Space'); // agua
+    await k.press('Enter');
+    await stepLabel(page, 5);
+    await k.press('ArrowRight'); // precisión de la siembra: mes
     await k.press('Tab'); // campo del mes: segmento del mes
     await k.press('Tab'); // segmento del año
     await k.press('Tab'); // "No sé todavía"
     await k.press('Space');
+    await k.press('Tab'); // «Atrás»
     await k.press('Tab'); // botón de envío
     await expect(page.getByRole('button', { name: 'Ver mi plan' })).toBeFocused();
     await k.press('Enter');
@@ -138,8 +236,11 @@ test.describe('formulario y resultado', () => {
     await page.getByLabel('Nombre de tu localidad').press('Enter');
     await expect(page.locator('[data-ff="location-status"]')).toContainText('Elige el tuyo');
     await expect(page.locator('[data-ff="results"]')).toBeHidden();
+    await expect(page.getByText('GeoNames')).toHaveCount(0); // la atribución vive en /fuentes
     await page.getByRole('radio', { name: /Karnataka, India/ }).check();
+    await expect(page.getByLabel('Latitud')).toBeHidden(); // se rellenan internamente
     await expect(page.getByLabel('Latitud')).toHaveValue('12,97');
+    await expect(page.getByRole('button', { name: 'Siguiente' })).toBeEnabled();
     await expect(page.locator('[data-ff="location-status"]')).toContainText('aproximada');
     await fillForm(page, { coords: { lat: '12,97', lon: '77,59' } });
     await submit(page);
@@ -178,13 +279,16 @@ test.describe('formulario y resultado', () => {
     await expect(page.locator('[data-ff="results"]')).toBeHidden();
     await expect(page.getByRole('button', { name: 'Usar mi ubicación' })).toBeFocused();
     await expect(page.getByLabel('Latitud')).toHaveValue('12,97'); // conserva lo escrito
+    await stepLabel(page, 1);
+    await next(page, 2);
     await page.getByRole('radio', { name: 'Quiero cuidar mi suelo' }).check();
+    await next(page, 2);
     await submit(page);
     await expect(page.getByRole('heading', { name: /^Plan A/ })).toBeVisible();
 
     await page.locator('[data-act="open"]').click();
     await expect(page.getByRole('heading', { name: 'Tu plan para esta siembra' })).toBeFocused();
-    await expect(page.getByRole('radio', { name: '¿Qué puedo sembrar después?' })).toBeChecked(); // el formulario vuelve al plan guardado
+    await expect(page.getByRole('radio', { name: '¿Qué puedo sembrar después?', includeHidden: true })).toBeChecked(); // el formulario (paso 3, oculto) vuelve al plan guardado
 
     await page.locator('[data-act="delete"]').click();
     await expect(page.getByRole('heading', { name: 'Tus planes guardados' })).toBeHidden();
@@ -205,7 +309,9 @@ test.describe('formulario y resultado', () => {
     await page.goto('/');
     await fillForm(page);
     await submit(page);
+    await back(page, 3);
     await page.getByLabel('Nombre del cultivo').fill('Garbanzo');
+    await next(page, 3);
     await submit(page);
     await expect(planA(page)).toContainText(expectedA);
     await page.waitForTimeout(2_500); // da tiempo a que llegue la respuesta antigua
@@ -222,9 +328,19 @@ test.describe('niveles de cobertura y alertas', () => {
     await submit(page);
     await expect(page.getByText('Tu plan está listo')).toBeVisible();
 
-    // Parcial: Chiclayo queda bajo el mínimo hídrico de todas las fichas
+    // Chiclayo + poca agua con los 5 pasos completos: plan principal con riego como condición, sin cajas de "incompleto"
     await page.getByRole('button', { name: 'Cambiar mis respuestas' }).click();
-    await fillForm(page, { coords: { lat: '-6,77', lon: '-79,84' } });
+    await fillForm(page, { coords: { lat: '-6,77', lon: '-79,84' }, water: 'Tengo poca agua' });
+    await submit(page);
+    await expect(page.getByText('Tu plan está listo')).toBeVisible();
+    await expect(planA(page).getByText('Requiere riego suplementario')).toBeVisible();
+    await expect(page.getByText('Tu plan está a medias')).toBeHidden();
+    await expect(page.getByText('Plan incompleto')).toBeHidden();
+    await expect(page.getByText('Cultivo por definir')).toBeHidden();
+
+    // Parcial: agua "No sé" es un dato que el agricultor puede aportar
+    await page.getByRole('button', { name: 'Cambiar mis respuestas' }).click();
+    await fillForm(page, { coords: { lat: '-6,77', lon: '-79,84' }, water: 'No estoy seguro' });
     await submit(page);
     await expect(page.getByText('Tu plan está a medias')).toBeVisible();
 
@@ -242,8 +358,8 @@ test.describe('niveles de cobertura y alertas', () => {
       return json(route, analyzeResponseSchema.parse({ result, alerts: [], explain: null }));
     });
     await page.getByRole('button', { name: 'Cambiar mis respuestas' }).click();
-    await page.getByLabel('Latitud').fill('40,4');
-    await page.getByLabel('Longitud').fill('-3,7');
+    await setCoords(page, '40,4', '-3,7');
+    await toLastStep(page);
     await submit(page);
     await expect(page.getByText('Aún no hay datos suficientes')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Qué falta' })).toBeVisible();
@@ -253,8 +369,8 @@ test.describe('niveles de cobertura y alertas', () => {
     await context.unroute('**/api/analyze');
     await mockApi(context, { alerts: [{ id: 'fire_hotspot_nearby', evidenceId: 'firms:prueba', count: 2, nearestKm: 12.4, latestAt: NOW.toISOString() }] });
     await page.getByRole('button', { name: 'Cambiar mis respuestas' }).click();
-    await page.getByLabel('Latitud').fill('12,97');
-    await page.getByLabel('Longitud').fill('77,59');
+    await setCoords(page, '12,97', '77,59');
+    await toLastStep(page);
     await submit(page);
     await expect(page.getByText('Posible foco de calor cerca')).toBeVisible();
     await expect(page.getByText('Aún no hay datos suficientes')).toBeHidden();
@@ -310,7 +426,7 @@ test.describe('red lenta y sin conexión', () => {
     await page.reload();
     await expect(page.getByRole('heading', { name: 'Planea tu próxima siembra' })).toBeVisible();
     await expect(page.getByText('No hay conexión a internet')).toBeVisible();
-    await expect(page.getByLabel('Latitud')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Ingresar coordenadas manualmente' })).toBeVisible();
 
     // El plan guardado se abre sin red y muestra lo mismo que se vio en línea
     await page.locator('[data-act="open"]').click();
@@ -319,7 +435,9 @@ test.describe('red lenta y sin conexión', () => {
 
     // Una entrada nueva sin red se calcula en el dispositivo con la misma evidencia científica local
     await page.getByRole('button', { name: 'Cambiar mis respuestas' }).click();
+    await next(page, 2);
     await page.getByRole('radio', { name: 'Quiero cuidar mi suelo' }).check();
+    await next(page, 2);
     await submit(page);
     await expect(page.getByText('Plan calculado en tu dispositivo')).toBeVisible();
     await expect(page.getByRole('heading', { name: /^Plan B/ })).toBeVisible();
@@ -327,8 +445,8 @@ test.describe('red lenta y sin conexión', () => {
 
     // Fuera de las zonas con datos locales no se inventa un plan
     await page.getByRole('button', { name: 'Cambiar mis respuestas' }).click();
-    await page.getByLabel('Latitud').fill('40,4');
-    await page.getByLabel('Longitud').fill('-3,7');
+    await setCoords(page, '40,4', '-3,7');
+    await toLastStep(page);
     await submit(page);
     await expect(page.getByText('Sin internet y sin datos guardados de tu zona')).toBeVisible();
 
@@ -341,5 +459,26 @@ test.describe('red lenta y sin conexión', () => {
     await page.goto('/offline/');
     await expect(page.getByRole('heading').first()).toBeVisible();
     await expect(page.getByRole('link', { name: /./ }).first()).toBeVisible();
+    await expect(page.getByRole('contentinfo')).toContainText('NASA Space Apps Challenge Chiclayo 2026');
+  });
+});
+
+test.describe('pie de página y fuentes', () => {
+  test('el pie aparece en el inicio y lleva a /fuentes con las atribuciones técnicas', async ({ page }) => {
+    await page.goto('/');
+    const footer = page.getByRole('contentinfo');
+    await expect(footer).toContainText('AgroShift');
+    await expect(footer).toContainText('no reemplaza');
+    await expect(footer).toContainText('NASA Space Apps Challenge Chiclayo 2026');
+    await expect(footer).toContainText('Equipo: por completar');
+    await footer.getByRole('link', { name: 'Fuentes científicas y herramientas' }).click();
+    await expect(page).toHaveURL(/\/fuentes\/?$/);
+    await expect(page.getByRole('heading', { level: 1, name: 'Fuentes científicas y herramientas' })).toBeVisible();
+    await expect(page.getByText('GeoNames, a través de Open-Meteo').first()).toBeVisible();
+    await expect(page.getByText('CC BY 4.0')).toBeVisible();
+    for (const name of ['NASA POWER', 'NASA SMAP', 'NASA Giovanni', 'NASA FIRMS', 'Astro', 'Supabase', 'Amazon Bedrock', 'Vercel']) {
+      await expect(page.getByRole('heading', { level: 3, name })).toBeVisible();
+    }
+    await expect(page.getByRole('contentinfo')).toBeVisible();
   });
 });

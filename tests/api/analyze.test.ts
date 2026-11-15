@@ -89,6 +89,7 @@ const finding: Finding = { id: 'reason.test', ruleId: 'rule.test', evidenceIds: 
 const plan = (role: 'A' | 'B'): Plan => ({
   role,
   completeness: 'complete',
+  kind: 'crop',
   scenario: role === 'A' ? { id: 'reference', nature: 'observed_reference' } : { id: 'limited_water', nature: 'hypothetical' },
   cropIds: ['frijol'],
   reasons: [finding],

@@ -1,5 +1,5 @@
 ---
-import { CAMPOS } from '../content/es.ts';
+import { CAMPOS, COORDENADAS_MANUAL } from '../content/es.ts';
 
 const c = CAMPOS.ubicacion;
 ---
@@ -34,8 +34,13 @@ const c = CAMPOS.ubicacion;
     <legend class="etiqueta">Elige tu localidad</legend>
   </fieldset>
 
-  <div role="group" aria-labelledby="coordenadas-titulo" class="pila-corta">
-    <p id="coordenadas-titulo" class="etiqueta">{c.opciones.manual_coordinates}</p>
+  <div>
+    <button type="button" class="enlace enlace--boton" data-ff="coords-toggle" aria-expanded="false" aria-controls="coordenadas">
+      {COORDENADAS_MANUAL}
+    </button>
+  </div>
+
+  <div id="coordenadas" data-ff="coords" role="group" aria-label={COORDENADAS_MANUAL} class="pila-corta" hidden>
     <div class="par">
       <div class="pila-corta">
         <label for="lat" class="etiqueta etiqueta--fina">{c.latitud}</label>

@@ -232,10 +232,20 @@ export const findingSchema = z.strictObject({
 
 const findings = z.array(findingSchema).max(12);
 
+/**
+ * complete: recomendación sin vacíos. conditional: recomendación con todos los datos de la persona,
+ * pero que solo se sostiene si se cumple una condición declarada (riego suplementario con agua
+ * limitada). incomplete: falta algo que la persona puede aportar.
+ */
+export const PLAN_COMPLETENESS = ['complete', 'conditional', 'incomplete'] as const;
+/** crop: secuencia de cultivos del catálogo. fallow: descanso con abono verde, sin cultivo comercial. */
+export const PLAN_KINDS = ['crop', 'fallow'] as const;
+
 export const planSchema = z
   .strictObject({
     role: z.enum(['A', 'B']),
-    completeness: z.enum(['complete', 'incomplete']),
+    completeness: z.enum(PLAN_COMPLETENESS),
+    kind: z.enum(PLAN_KINDS).default('crop'),
     scenario: scenarioSchema,
     /** Secuencia posterior al cultivo indicado, con IDs canónicos del catálogo. */
     cropIds: z.array(text(60)).max(4),
@@ -246,8 +256,12 @@ export const planSchema = z
     toVerify: findings,
   })
   .refine(
-    (p) => p.completeness !== 'complete' || (p.cropIds.length > 0 && p.reasons.length > 0),
-    'Plan completo sin secuencia o sin razones',
+    (p) => p.completeness === 'incomplete' || ((p.kind === 'fallow' || p.cropIds.length > 0) && p.reasons.length > 0),
+    'Plan completo o condicionado sin secuencia o sin razones',
+  )
+  .refine(
+    (p) => p.kind !== 'fallow' || (p.completeness === 'complete' && p.cropIds.length === 0),
+    'El descanso es un plan completo y sin cultivos',
   )
   .refine(
     (p) => p.completeness !== 'incomplete' || p.toVerify.length > 0,
@@ -272,8 +286,8 @@ export const analysisResultSchema = z
   .refine(
     (r) =>
       r.status !== 'ok' ||
-      (r.planA?.completeness === 'complete' && r.planB?.completeness === 'complete'),
-    "'ok' exige Plan A y Plan B completos",
+      (!!r.planA && !!r.planB && r.planA.completeness !== 'incomplete' && r.planB.completeness !== 'incomplete'),
+    "'ok' exige Plan A y Plan B completos o condicionados",
   )
   .refine(
     (r) =>

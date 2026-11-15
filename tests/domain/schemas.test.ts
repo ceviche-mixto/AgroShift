@@ -203,6 +203,7 @@ const finding = { id: 'reason.family_break', ruleId: 'rotation.family', evidence
 const plan = (role: 'A' | 'B', patch: Partial<Plan> = {}): Plan => ({
   role,
   completeness: 'complete',
+  kind: 'crop',
   scenario: role === 'A' ? { id: 'reference', nature: 'observed_reference' } : { id: 'limited_water', nature: 'hypothetical' },
   cropIds: ['frijol'],
   reasons: [finding],
@@ -244,6 +245,27 @@ describe('escenarios, planes y resultado', () => {
     expect(
       planSchema.safeParse(plan('B', { completeness: 'incomplete', cropIds: [], reasons: [], toVerify: [finding] })).success,
     ).toBe(true);
+  });
+
+  it('plan condicionado: pide cultivo y razones, y no cuenta como incompleto', () => {
+    expect(planSchema.safeParse(plan('A', { completeness: 'conditional' })).success).toBe(true);
+    expect(planSchema.safeParse(plan('A', { completeness: 'conditional', cropIds: [] })).success).toBe(false);
+    expect(planSchema.safeParse(plan('A', { completeness: 'conditional', reasons: [] })).success).toBe(false);
+    const conditionalA = plan('A', { completeness: 'conditional' });
+    expect(analysisResultSchema.safeParse(result({ planA: conditionalA })).success).toBe(true);
+    expect(analysisResultSchema.safeParse(result({ planA: conditionalA, planB: plan('B', { completeness: 'conditional' }) })).success).toBe(true);
+  });
+
+  it('descanso con abono verde: plan completo y sin cultivos; un descanso con cultivos o condicionado no vale', () => {
+    const fallow = plan('B', { kind: 'fallow', cropIds: [] });
+    expect(planSchema.safeParse(fallow).success).toBe(true);
+    expect(planSchema.safeParse(plan('B', { kind: 'fallow', cropIds: [], reasons: [] })).success).toBe(false);
+    expect(planSchema.safeParse(plan('B', { kind: 'fallow', cropIds: ['frijol'] })).success).toBe(false);
+    expect(planSchema.safeParse(plan('B', { kind: 'fallow', cropIds: [], completeness: 'conditional' })).success).toBe(false);
+    expect(analysisResultSchema.safeParse(result({ planB: fallow })).success).toBe(true);
+    // Un plan guardado antes de existir `kind` sigue siendo válido y es de cultivos
+    const { kind: _kind, ...old } = plan('A');
+    expect(planSchema.parse(old).kind).toBe('crop');
   });
 
   it('separa resultado completo, parcial y sin evidencia', () => {

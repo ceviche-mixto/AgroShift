@@ -59,6 +59,12 @@ const TEMPLATES = {
   'reason.rain_margin': (p) =>
     `En el año de referencia llovió cerca de ${n(p.rainMm)} mm y ${crop(p.crop)} pide al menos ${n(p.minMm)} mm al año: quedan ${n(p.marginMm)} mm de margen.`,
   'reason.regional_season': (p) => `Las fechas caben en una temporada documentada para ${crop(p.crop)} en tu zona: ${n(p.season)}.`,
+  'reason.less_water_than_plan_a': (p) =>
+    `Según su ficha, ${crop(p.crop)} se da bien desde ${n(p.optimalMinMm)} mm de lluvia al año y ${crop(p.other)}, desde ${n(p.otherOptimalMinMm)} mm: pide menos agua.`,
+  'reason.fallow_no_rain_support': (p) =>
+    `La lluvia del año de referencia (cerca de ${n(p.rainMm)} mm) no alcanza el mínimo de ningún otro cultivo del catálogo (desde ${n(p.minMm)} mm al año): sin riego, ninguno se sostiene.`,
+  'reason.green_manure_legume': () =>
+    'Una leguminosa de cobertura (abono verde) puede dejar nitrógeno para el cereal que siembres después; cuánto aporta depende de la especie y del agua, y aquí no se calcula.',
   'reason.lower_water_need': (p) => `Para ahorrar agua: según su ficha, ${crop(p.crop)} se da bien desde ${n(p.optimalMinMm)} mm de lluvia al año.`,
 
   'restriction.reference_year': (p) =>
@@ -70,7 +76,9 @@ const TEMPLATES = {
   'restriction.depends_on_irrigation': (p) =>
     `La lluvia del año de referencia (cerca de ${n(p.rainMm)} mm) no alcanza el mínimo de ${crop(p.crop)} (${n(p.minMm)} mm al año): este plan depende del riego.`,
   'restriction.rain_below_minimum': (p) =>
-    `Con agua limitada, la lluvia del año de referencia (cerca de ${n(p.rainMm)} mm) no alcanza el mínimo de ${crop(p.crop)} (${n(p.minMm)} mm al año).`,
+    `Con poca agua, la lluvia del año de referencia (cerca de ${n(p.rainMm)} mm) no alcanza el mínimo de ${crop(p.crop)} (${n(p.minMm)} mm al año): este plan necesita riego suplementario.`,
+  'restriction.green_manure_needs_water': () =>
+    'La leguminosa de cobertura también necesita algo de agua para crecer: si no la tienes, deja la parcela en descanso sin sembrar.',
   'restriction.rain_above_maximum': (p) =>
     `La lluvia del año de referencia (cerca de ${n(p.rainMm)} mm) supera el máximo que tolera ${crop(p.crop)} según su ficha (${n(p.maxMm)} mm al año).`,
   'restriction.outside_regional_season': (p) =>
@@ -78,10 +86,13 @@ const TEMPLATES = {
 
   'action.consult_local_technician': (p) =>
     `Esto es un apoyo para decidir: confirma fechas de siembra y variedad de ${crop(p.crop)} con un técnico agrario de tu zona.`,
+  'action.consult_green_manure': () =>
+    'Antes de sembrar la cobertura, confirma con un técnico agrario de tu zona qué especie usar y cuánta agua necesita.',
   'action.secure_irrigation': (p) => `Asegura el riego para todo el ciclo de ${crop(p.crop)}: la lluvia sola no alcanza.`,
 
   'signal.temperature_out_of_limits': (p) =>
     `Si la temperatura media de la campaña sale del rango de ${n(p.min)} a ${n(p.max)} °C, ${crop(p.crop)} deja de ser opción: revisa el otro plan.`,
+  'signal.irrigation_available': () => 'Si consigues agua de riego para todo el ciclo, vuelve al Plan A.',
   'signal.less_irrigation': (p) => `Si el agua de riego resulta menor a la prevista, ${crop(p.crop)} se queda sin respaldo: revisa el otro plan.`,
   'signal.rain_below_minimum': (p) => `Si la lluvia del año baja de ${n(p.minMm)} mm, ${crop(p.crop)} necesitaría riego: revisa el otro plan.`,
 
@@ -92,7 +103,6 @@ const TEMPLATES = {
   'verify.planting_date': () => 'Indica al menos el mes de siembra: sin fecha no podemos comparar el clima con ningún cultivo.',
   'verify.water_availability': (p) =>
     `No sabemos cuánta agua tendrás: la lluvia del año de referencia (cerca de ${n(p.rainMm)} mm) no alcanza el mínimo de ${crop(p.crop)} (${n(p.minMm)} mm al año).`,
-  'verify.irrigation_amount': (p) => `Confirma cuánta agua de riego tendrás para ${crop(p.crop)}: con solo la lluvia no hay sustento.`,
   'verify.regional_calendar': (p) => `No tenemos un calendario de siembra respaldado para ${crop(p.crop)} en tu zona: verifícalo localmente.`,
   'verify.variety_cycle': (p) => `Se evaluó el ciclo más corto de la ficha de ${crop(p.crop)} (${n(p.days)} días): confirma cuánto dura tu variedad.`,
   'verify.soil_ph': (p) => `No tenemos datos de tu suelo: ${crop(p.crop)} pide un pH entre ${n(p.min)} y ${n(p.max)}.`,
@@ -106,6 +116,11 @@ const TEMPLATES = {
   'missing.rain': (p) => `Faltan datos de lluvia del año de referencia: hay ${n(p.validDays)} días válidos y se necesitan ${n(p.minDays)}.`,
   'missing.cycle_coverage': () => 'Los datos de clima no cubren lo suficiente las fechas del ciclo de ningún cultivo.',
 } satisfies Record<string, (p: Params) => string>;
+
+/** Hechos que significan «este plan necesita riego»: base de la insignia de condición clave. */
+const IRRIGATION_FACTS: string[] = ['restriction.depends_on_irrigation', 'restriction.rain_below_minimum'];
+export const needsIrrigation = (plan: Pick<PlanFacts, 'restrictions'> | null) =>
+  !!plan?.restrictions.some((f) => IRRIGATION_FACTS.includes(f.id));
 
 export type FindingId = keyof typeof TEMPLATES;
 /** Todos los `id` de hallazgo que el motor puede emitir. */

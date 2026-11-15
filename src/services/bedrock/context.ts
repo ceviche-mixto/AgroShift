@@ -1,7 +1,7 @@
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
 import type { AnalysisResult } from '../../domain/contracts.ts';
-import { findingSchema, RESULT_STATES, scenarioSchema } from '../../domain/schemas.ts';
+import { findingSchema, PLAN_COMPLETENESS, RESULT_STATES, scenarioSchema } from '../../domain/schemas.ts';
 
 // Contexto de explicación: hechos ya calculados por el motor, firmados por /api/analyze y
 // verificados por /api/explain. Solo IDs y hechos permitidos. Sin ubicación, sin texto libre
@@ -13,7 +13,7 @@ export const MAX_CONTEXT_CHARS = 12_000;
 const fact = findingSchema.omit({ evidenceIds: true });
 const facts = z.array(fact).max(12);
 const planFacts = z.strictObject({
-  completeness: z.enum(['complete', 'incomplete']),
+  completeness: z.enum(PLAN_COMPLETENESS),
   scenario: scenarioSchema,
   cropIds: z.array(z.string().max(60)).max(4),
   reasons: facts,

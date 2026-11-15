@@ -43,6 +43,7 @@ const dataBodies = Object.fromEntries(LOCAL_SNAPSHOT_URLS.map((u) => [u, JSON.st
 const baseSite = (tag = 'A'): Site => ({
   '/': `<!doctype html><link rel="stylesheet" href="/_astro/index.${tag}.css"><link rel="icon" href="/favicon.svg"><a href="/offline/">x</a><script type="module" src="/_astro/page.${tag}.js"></script><script type="module">import "/_astro/inline.${tag}.js"</script>`,
   '/offline/': `<!doctype html><link rel="stylesheet" href="/_astro/index.${tag}.css"><h1>Sin conexión</h1>`,
+  '/fuentes/': `<!doctype html><link rel="stylesheet" href="/_astro/index.${tag}.css"><h1>Fuentes</h1>`,
   [`/_astro/index.${tag}.css`]: `@font-face{src:url(./font.${tag}.woff2)}`,
   [`/_astro/font.${tag}.woff2`]: 'fuente',
   [`/_astro/page.${tag}.js`]: `import"./chunk.${tag}.js";export const l=()=>import("./lazy.${tag}.js");`,
@@ -59,6 +60,7 @@ const SHELL_FILES = (tag = 'A') =>
   [
     '/',
     '/offline/',
+    '/fuentes/',
     '/favicon.svg',
     ...LOCAL_SNAPSHOT_URLS,
     ...['index.%.css', 'font.%.woff2', 'page.%.js', 'chunk.%.js', 'zod.%.js', 'inline.%.js', 'lazy.%.js', 'dep.%.js', 'extra.%.css'].map((f) => `/_astro/${f.replace('%', tag)}`),
