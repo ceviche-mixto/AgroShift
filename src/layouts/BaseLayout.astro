@@ -1,29 +1,41 @@
 ---
 import '../styles/global.css';
 import Footer from '../components/Footer.astro';
+import LangSwitch from '../components/LangSwitch.astro';
+import { dict, LANG_STORAGE_KEY, pathFor, type Lang } from '../i18n/index.ts';
 
 interface Props {
+  lang: Lang;
+  /** Ruta de esta página en inglés (`/`, `/fuentes/`, `/offline/`): de ahí salen el selector y los enlaces entre idiomas. */
+  path: string;
   title: string;
   description?: string;
 }
-const { title, description = 'AgroShift: gestión de turnos agrícolas.' } = Astro.props;
+const { lang, path, title, description } = Astro.props;
+const t = dict(lang);
+// Quien eligió español antes y entra por la ruta en inglés pasa a la española; nunca al revés.
+const redirect = `try{if(localStorage.getItem(${JSON.stringify(LANG_STORAGE_KEY)})==='es'&&location.pathname.indexOf('/es')!==0)location.replace('/es'+location.pathname+location.search+location.hash)}catch(e){}`;
 ---
 <!doctype html>
-<html lang="es">
+<html lang={lang}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content={description} />
+    <meta name="description" content={description ?? t.SITIO.descripcion} />
     <title>{title}</title>
+    <link rel="alternate" hreflang="en" href={pathFor('en', path)} />
+    <link rel="alternate" hreflang="es" href={pathFor('es', path)} />
+    {lang === 'en' && <script is:inline set:html={redirect}></script>}
   </head>
   <body>
-    <a class="saltar" href="#contenido">Saltar al contenido</a>
-    <header class="mx-auto max-w-3xl px-4 pt-6">
+    <a class="saltar" href="#contenido">{t.SITIO.saltar}</a>
+    <header class="mx-auto max-w-3xl px-4 pt-6 cabecera">
       <p class="font-bold">AgroShift</p>
+      <LangSwitch lang={lang} path={path} />
     </header>
     <main id="contenido" tabindex="-1" class="mx-auto max-w-3xl px-4 py-6">
       <slot />
     </main>
-    <Footer />
+    <Footer lang={lang} path={path} />
   </body>
 </html>

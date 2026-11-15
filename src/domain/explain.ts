@@ -1,6 +1,8 @@
+import type { Lang } from '../i18n/index.ts';
+import { CROP_NAMES_EN, FAMILY_FALLBACK_EN, FAMILY_NAMES_EN, NEUTRAL_FACT_EN, QUESTIONS_EN, TEMPLATES_EN } from '../i18n/explain-en.ts';
 import type { Finding, Plan, ResultState, Scenario } from './contracts.ts';
 
-// Explicaciones por plantilla, iguales en navegador y servidor. Puro y sin Zod: el texto visible
+// Explicaciones por plantilla, iguales en navegador y servidor (español aquí; inglés en i18n/explain-en.ts). Puro y sin Zod: el texto visible
 // sale solo de los hechos del motor (`id` + `params`), así nadie añade afirmaciones nuevas.
 
 export type Fact = Pick<Finding, 'id' | 'ruleId' | 'params'>;
@@ -34,14 +36,17 @@ const CROP_NAMES: Record<string, string> = {
 
 const FAMILY_NAMES: Record<string, string> = { vegetable: 'hortaliza', tuber: 'tubérculo', perennial: 'cultivo perenne' };
 /** Nombre cotidiano del grupo general de un cultivo sin ficha propia. */
-export const familyName = (groupId: unknown): string => (typeof groupId === 'string' && FAMILY_NAMES[groupId]) || 'cultivo sin ficha';
+export const familyName = (groupId: unknown, lang: Lang = 'es'): string =>
+  lang === 'en'
+    ? (typeof groupId === 'string' && FAMILY_NAMES_EN[groupId]) || FAMILY_FALLBACK_EN
+    : (typeof groupId === 'string' && FAMILY_NAMES[groupId]) || 'cultivo sin ficha';
 
-/** Nombre cotidiano en español del cultivo canónico. Un ID sin nombre se muestra sin guiones. */
-export function cropName(cropId: string): string {
-  return CROP_NAMES[cropId] ?? cropId.replace(/[_-]+/g, ' ');
+/** Nombre cotidiano del cultivo canónico en el idioma (español por defecto). Un ID sin nombre se muestra sin guiones. */
+export function cropName(cropId: string, lang: Lang = 'es'): string {
+  return (lang === 'en' ? CROP_NAMES_EN : CROP_NAMES)[cropId] ?? cropId.replace(/[_-]+/g, ' ');
 }
 
-type Params = Fact['params'];
+export type Params = Fact['params'];
 /** Valor de `params` para mostrar: coma decimal en números y «sin dato» si falta. */
 const n = (v: Params[string] | undefined) =>
   v === null || v === undefined ? 'sin dato' : typeof v === 'number' ? String(v).replace('.', ',') : v;
@@ -134,10 +139,10 @@ export type FindingId = keyof typeof TEMPLATES;
 /** Todos los `id` de hallazgo que el motor puede emitir. */
 export const FINDING_IDS = Object.keys(TEMPLATES) as FindingId[];
 
-/** Frase breve en español. Un `id` sin plantilla devuelve un texto neutro: nunca lanza. */
-export function explainFinding(fact: Fact): string {
-  const template = (TEMPLATES as Record<string, (p: Params) => string>)[fact.id];
-  return template ? template(fact.params) : 'Hay un dato más que conviene revisar con un técnico local.';
+/** Frase breve en el idioma (español por defecto). Un `id` sin plantilla devuelve un texto neutro: nunca lanza. */
+export function explainFinding(fact: Fact, lang: Lang = 'es'): string {
+  const template = ((lang === 'en' ? TEMPLATES_EN : TEMPLATES) as Record<string, (p: Params) => string>)[fact.id];
+  return template ? template(fact.params) : lang === 'en' ? NEUTRAL_FACT_EN : 'Hay un dato más que conviene revisar con un técnico local.';
 }
 
 export const QUESTION_IDS = ['why_plan_a', 'less_water', 'when_to_switch', 'what_to_check'] as const;
@@ -149,8 +154,8 @@ const QUESTIONS: Record<QuestionId, string> = {
   when_to_switch: '¿Cuándo debería pasar al Plan B?',
   what_to_check: '¿Qué debo verificar antes de sembrar?',
 };
-export function questionText(id: QuestionId): string {
-  return QUESTIONS[id];
+export function questionText(id: QuestionId, lang: Lang = 'es'): string {
+  return (lang === 'en' ? QUESTIONS_EN : QUESTIONS)[id];
 }
 
 const LISTS = ['reasons', 'restrictions', 'actions', 'reconsiderSignals', 'toVerify'] as const;

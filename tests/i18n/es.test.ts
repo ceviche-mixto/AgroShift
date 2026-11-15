@@ -33,7 +33,7 @@ import {
   TIPO_EVIDENCIA,
   TONOS,
   type Mensaje,
-} from '../../src/content/es.ts';
+} from '../../src/i18n/es.ts';
 
 const keys = (o: object) => Object.keys(o).sort();
 const sorted = (a: readonly string[]) => [...a].sort();

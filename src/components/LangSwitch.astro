@@ -1,0 +1,43 @@
+---
+// Selector EN | ES. Cada idioma tiene su ruta (`/` y `/es/`); el clic además guarda la preferencia.
+import { dict, pathFor, type Lang } from '../i18n/index.ts';
+
+interface Props {
+  lang: Lang;
+  /** Ruta de esta página en inglés, p. ej. `/fuentes/`. */
+  path: string;
+}
+const { lang, path } = Astro.props;
+const { IDIOMA } = dict(lang);
+const idiomas = ['en', 'es'] as const;
+---
+<nav class="idioma" aria-label={IDIOMA.grupo}>
+  {idiomas.map((code) => (
+    <a
+      class="opcion"
+      href={pathFor(code, path)}
+      lang={code}
+      hreflang={code}
+      data-lang={code}
+      aria-label={IDIOMA[code].etiqueta}
+      aria-current={code === lang ? 'true' : undefined}
+    >
+      {IDIOMA[code].corto}
+    </a>
+  ))}
+</nav>
+
+<script>
+  import { LANG_STORAGE_KEY, isLang } from '../i18n/index.ts';
+
+  document.addEventListener('click', (e) => {
+    const link = (e.target as Element).closest<HTMLAnchorElement>('a[data-lang]');
+    const code = link?.dataset.lang;
+    if (!isLang(code)) return;
+    try {
+      localStorage.setItem(LANG_STORAGE_KEY, code);
+    } catch {
+      // sin almacenamiento: el cambio de ruta funciona igual
+    }
+  });
+</script>

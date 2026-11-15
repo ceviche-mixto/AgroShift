@@ -1,17 +1,4 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
+import OfflinePage from '../components/OfflinePage.astro';
 ---
-<BaseLayout title="Sin conexión · AgroShift" description="AgroShift sin conexión: qué puedes hacer cuando no hay datos guardados.">
-  <h1 class="text-3xl font-bold leading-tight">Sin conexión</h1>
-  <div class="estado estado--sindato mt-6">
-    <p class="estado__etiqueta"><span class="estado__simbolo" aria-hidden="true">?</span> Sin dato</p>
-    <p class="estado__titulo">No hay datos guardados</p>
-    <p>
-      Estás sin conexión y este dispositivo no tiene una copia de lo que buscas. Para usar AgroShift sin
-      conexión, ábrelo una vez con internet y espera el aviso de que quedó listo. Una primera visita sin red
-      no se puede abrir.
-    </p>
-    <p class="estado__paso">Vuelve al inicio: ahí puedes ver los planes que ya guardaste.</p>
-  </div>
-  <p class="mt-6"><a class="boton" href="/">Volver al inicio</a></p>
-</BaseLayout>
+<OfflinePage lang="en" />

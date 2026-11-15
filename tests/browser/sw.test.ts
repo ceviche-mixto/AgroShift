@@ -44,6 +44,9 @@ const baseSite = (tag = 'A'): Site => ({
   '/': `<!doctype html><link rel="stylesheet" href="/_astro/index.${tag}.css"><link rel="icon" href="/favicon.svg"><a href="/offline/">x</a><script type="module" src="/_astro/page.${tag}.js"></script><script type="module">import "/_astro/inline.${tag}.js"</script>`,
   '/offline/': `<!doctype html><link rel="stylesheet" href="/_astro/index.${tag}.css"><h1>Sin conexión</h1>`,
   '/fuentes/': `<!doctype html><link rel="stylesheet" href="/_astro/index.${tag}.css"><h1>Fuentes</h1>`,
+  '/es/': `<!doctype html><link rel="stylesheet" href="/_astro/index.${tag}.css"><script type="module" src="/_astro/page.${tag}.js"></script><p>shell es</p>`,
+  '/es/offline/': `<!doctype html><link rel="stylesheet" href="/_astro/index.${tag}.css"><h1>Sin conexión es</h1>`,
+  '/es/fuentes/': `<!doctype html><link rel="stylesheet" href="/_astro/index.${tag}.css"><h1>Fuentes es</h1>`,
   [`/_astro/index.${tag}.css`]: `@font-face{src:url(./font.${tag}.woff2)}`,
   [`/_astro/font.${tag}.woff2`]: 'fuente',
   [`/_astro/page.${tag}.js`]: `import"./chunk.${tag}.js";export const l=()=>import("./lazy.${tag}.js");`,
@@ -61,6 +64,9 @@ const SHELL_FILES = (tag = 'A') =>
     '/',
     '/offline/',
     '/fuentes/',
+    '/es/',
+    '/es/offline/',
+    '/es/fuentes/',
     '/favicon.svg',
     ...LOCAL_SNAPSHOT_URLS,
     ...['index.%.css', 'font.%.woff2', 'page.%.js', 'chunk.%.js', 'zod.%.js', 'inline.%.js', 'lazy.%.js', 'dep.%.js', 'extra.%.css'].map((f) => `/_astro/${f.replace('%', tag)}`),
@@ -285,6 +291,15 @@ describe('ruteo', () => {
     expect(await text(sw.get('/offline', { mode: 'navigate' }))).toContain('Sin conexión');
     expect(await text(sw.get('/offline/', { mode: 'navigate' }))).toContain('Sin conexión');
     expect(await text(sw.get('/otra/ruta', { mode: 'navigate' }))).toContain('page.A.js');
+  });
+
+  it('navegación sin red en español: shell y página sin conexión de /es/', async () => {
+    const sw = boot();
+    await sw.deploy();
+    sw.setOnline(false);
+    expect(await text(sw.get('/es/otra/ruta', { mode: 'navigate' }))).toContain('shell es');
+    expect(await text(sw.get('/es/offline', { mode: 'navigate' }))).toContain('Sin conexión es');
+    expect(await text(sw.get('/espresso', { mode: 'navigate' }))).toContain('page.A.js');
   });
 
   it('navegación con 5xx del servidor: usa la copia guardada', async () => {

@@ -71,7 +71,7 @@ async function mockApi(context: BrowserContext, opts: { explain?: string | null;
 test.describe('formulario y resultado', () => {
   test('compara Plan A y Plan B antes del detalle y enlaza las fuentes recibidas', async ({ page, context }) => {
     await mockApi(context);
-    await page.goto('/');
+    await page.goto('/es/');
     await expect(page.locator('html')).toHaveAttribute('lang', 'es');
     await fillForm(page);
     await submit(page);
@@ -98,7 +98,7 @@ test.describe('formulario y resultado', () => {
   });
 
   test('quiz de 5 pasos: avance accesible, «Siguiente» exige respuesta y «Atrás» conserva los datos', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/es/');
     await stepLabel(page, 1);
     await expect(page.locator('[data-ff="step-count"]')).toHaveAttribute('aria-live', 'polite');
     const bar = page.getByRole('progressbar');
@@ -151,7 +151,7 @@ test.describe('formulario y resultado', () => {
   });
 
   test('Enter avanza solo si la respuesta es válida', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/es/');
     await page.getByRole('button', { name: 'Ingresar coordenadas manualmente' }).click();
     await page.getByLabel('Latitud').fill('12,97');
     await page.getByLabel('Latitud').press('Enter');
@@ -162,7 +162,7 @@ test.describe('formulario y resultado', () => {
   });
 
   test('un error del servidor en un paso anterior lleva a ese paso, marca aria-invalid y se limpia al corregir', async ({ page, context }) => {
-    await page.goto('/');
+    await page.goto('/es/');
     await expect(page.locator('[data-ff="status"]')).toHaveAttribute('role', 'status');
     await context.route('**/api/analyze', (route) =>
       json(route, { contractVersion: 1, status: 'invalid_input', issues: [{ path: 'water', code: 'invalid' }] }, 400),
@@ -181,7 +181,7 @@ test.describe('formulario y resultado', () => {
 
   test('con GPS denegado se completa y envía solo con teclado', async ({ page, context }) => {
     await mockApi(context);
-    await page.goto('/');
+    await page.goto('/es/');
     await page.getByRole('button', { name: 'Usar mi ubicación' }).click();
     await expect(page.locator('[data-ff="location-status"]')).toContainText('No pudimos usar tu ubicación');
     // Si falla el GPS, el aviso manda a escribir coordenadas: quedan a la vista
@@ -232,7 +232,7 @@ test.describe('formulario y resultado', () => {
         ],
       }),
     );
-    await page.goto('/');
+    await page.goto('/es/');
     await page.getByLabel('Nombre de tu localidad').fill('Bengaluru');
     await page.getByLabel('Nombre de tu localidad').press('Enter');
     await expect(page.locator('[data-ff="location-status"]')).toContainText('Elige el tuyo');
@@ -255,7 +255,7 @@ test.describe('formulario y resultado', () => {
       explainCalls++;
       await json(route, { questionId: 'less_water', source: 'model', items: [{ key: 'B:reasons:0', text: 'Texto del modelo de prueba.' }] });
     });
-    await page.goto('/');
+    await page.goto('/es/');
     await fillForm(page);
     await submit(page);
     await expect(page.getByRole('heading', { name: /^Plan A/ })).toBeVisible();
@@ -269,7 +269,7 @@ test.describe('formulario y resultado', () => {
 
   test('guardar, editar, abrir y quitar un plan', async ({ page, context }) => {
     await mockApi(context);
-    await page.goto('/');
+    await page.goto('/es/');
     await fillForm(page);
     await submit(page);
     await page.getByRole('button', { name: 'Guardar este plan' }).click();
@@ -298,7 +298,7 @@ test.describe('formulario y resultado', () => {
   test('reenvío seguido: solo se presenta el plan de la última entrada', async ({ page, context }) => {
     const first = indiaInput();
     const second = indiaInput({ crop: { status: 'known', stage: 'last_harvested', name: 'Garbanzo' } });
-    const expectedA = responseFor(second).result.planA!.cropIds.map(cropName).join(', luego ');
+    const expectedA = responseFor(second).result.planA!.cropIds.map((c) => cropName(c)).join(', luego ');
     expect(responseFor(first).result.planA!.cropIds).not.toEqual(responseFor(second).result.planA!.cropIds);
 
     let n = 0;
@@ -307,7 +307,7 @@ test.describe('formulario y resultado', () => {
       if (n++ === 0) await new Promise((r) => setTimeout(r, 2_000)); // la primera llega tarde
       await json(route, { ...responseFor(input), alerts: [], explain: null }).catch(() => {});
     });
-    await page.goto('/');
+    await page.goto('/es/');
     await fillForm(page);
     await submit(page);
     await back(page, 3);
@@ -324,7 +324,7 @@ test.describe('formulario y resultado', () => {
 test.describe('niveles de cobertura y alertas', () => {
   test('ok, parcial e insuficiente se distinguen, y una alerta no se confunde con falta de datos', async ({ page, context }) => {
     await mockApi(context);
-    await page.goto('/');
+    await page.goto('/es/');
     await fillForm(page);
     await submit(page);
     await expect(page.getByText('Tu plan está listo')).toBeVisible();
@@ -380,7 +380,7 @@ test.describe('niveles de cobertura y alertas', () => {
   test('reflujo a 320 px sin desplazamiento horizontal, con resultados', async ({ page, context }) => {
     await mockApi(context);
     await page.setViewportSize({ width: 320, height: 700 });
-    await page.goto('/');
+    await page.goto('/es/');
     await fillForm(page);
     await submit(page);
     await expect(page.getByRole('heading', { name: /^Plan B/ })).toBeVisible();
@@ -398,20 +398,20 @@ test.describe('red lenta y sin conexión', () => {
   test('red lenta: pasados 8 s vuelve a un plan calculado en el dispositivo', async ({ page, context }) => {
     test.setTimeout(60_000);
     await mockApi(context, { delayMs: 12_000 });
-    await page.goto('/');
+    await page.goto('/es/');
     await fillForm(page);
     await submit(page);
     await expect(page.locator('[data-ff="loading"]')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Revisando tu campo…' })).toBeVisible();
     await expect(page.getByText('Plan calculado en tu dispositivo')).toBeVisible({ timeout: 15_000 });
-    await expect(planA(page)).toContainText(responseFor(indiaInput()).result.planA!.cropIds.map(cropName).join(', luego '));
+    await expect(planA(page)).toContainText(responseFor(indiaInput()).result.planA!.cropIds.map((c) => cropName(c)).join(', luego '));
     await expect(page.locator('[data-ff="loading"]')).toBeHidden();
   });
 
   test('tras una visita previa, recargar sin red abre el formulario y el plan guardado sin pedir nada', async ({ page, context }) => {
     test.setTimeout(60_000);
     await mockApi(context);
-    await page.goto('/');
+    await page.goto('/es/');
     await expect(page.getByText('Listo para usar sin internet')).toBeVisible({ timeout: 30_000 });
     await fillForm(page);
     await submit(page);
@@ -457,7 +457,7 @@ test.describe('red lenta y sin conexión', () => {
   });
 
   test('una primera visita sin copia previa muestra la pantalla sin datos', async ({ page }) => {
-    await page.goto('/offline/');
+    await page.goto('/es/offline/');
     await expect(page.getByRole('heading').first()).toBeVisible();
     await expect(page.getByRole('link', { name: /./ }).first()).toBeVisible();
     await expect(page.getByRole('contentinfo')).toContainText('NASA Space Apps Challenge Chiclayo 2026');
@@ -466,12 +466,12 @@ test.describe('red lenta y sin conexión', () => {
 
 test.describe('pie de página y fuentes', () => {
   test('el pie aparece en el inicio y lleva a /fuentes con las atribuciones técnicas', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/es/');
     const footer = page.getByRole('contentinfo');
     await expect(footer).toContainText('AgroShift');
     await expect(footer).toContainText('no reemplaza');
     await expect(footer).toContainText('NASA Space Apps Challenge Chiclayo 2026');
-    await expect(footer).toContainText('Equipo: por completar');
+    await expect(footer).toContainText('Equipo OneCtrl: Giancarlo Luciano Larios Infantes, Enzo Gabriel García Infantes y Sergio Anibal Tuesta Rodas');
     await footer.getByRole('link', { name: 'Fuentes científicas y herramientas' }).click();
     await expect(page).toHaveURL(/\/fuentes\/?$/);
     await expect(page.getByRole('heading', { level: 1, name: 'Fuentes científicas y herramientas' })).toBeVisible();
@@ -487,7 +487,7 @@ test.describe('pie de página y fuentes', () => {
 test.describe('paso 2: elegir y reconocer el cultivo', () => {
   test('opciones grandes, sinónimos regionales y «Otro cultivo»', async ({ page, context }) => {
     await mockApi(context);
-    await page.goto('/');
+    await page.goto('/es/');
     await setCoords(page, INDIA.lat, INDIA.lon);
     await next(page);
     await stepLabel(page, 2);
@@ -529,7 +529,7 @@ test.describe('paso 2: elegir y reconocer el cultivo', () => {
 
   test('cultivo fuera de las fichas: plan completo con regla general por familia declarada', async ({ page, context }) => {
     await mockApi(context);
-    await page.goto('/');
+    await page.goto('/es/');
     await fillForm(page, { crop: 'Papa' });
     await submit(page);
     await expect(page.getByText('Tu plan está listo')).toBeVisible();
@@ -550,7 +550,7 @@ test.describe('FIRMS sin respuesta', () => {
       };
       return json(route, { ...base, alerts: [], explain: null, result });
     });
-    await page.goto('/');
+    await page.goto('/es/');
     await fillForm(page);
     await submit(page);
     await page.getByText('Fuentes Científicas Utilizadas', { exact: true }).click();
@@ -562,5 +562,73 @@ test.describe('FIRMS sin respuesta', () => {
     await expect(aviso).not.toContainText('Alerta');
     await expect(page.locator('.estado--alerta', { hasText: /calor|FIRMS/ })).toHaveCount(0);
     await expect(page.getByText('Posible foco de calor cerca')).toBeHidden();
+  });
+});
+
+test.describe('idioma: inglés por defecto y selector EN | ES', () => {
+  test('abre en inglés, cambia a español, recuerda la elección y vuelve a inglés', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Plan your next planting');
+    await expect(page.locator('[data-ff="step-count"]')).toHaveText('Step 1 of 5');
+    await expect(page.getByRole('contentinfo')).toContainText('Team OneCtrl: Giancarlo Luciano Larios Infantes, Enzo Gabriel García Infantes and Sergio Anibal Tuesta Rodas');
+
+    // Dos selectores (cabecera y pie), con el idioma activo marcado y tamaño táctil de 48 px
+    const switches = page.getByRole('navigation', { name: 'Language' });
+    await expect(switches).toHaveCount(2);
+    const active = switches.first().getByRole('link', { name: /^EN:/ });
+    await expect(active).toHaveAttribute('aria-current', 'true');
+    for (const link of await switches.first().getByRole('link').all()) expect((await link.boundingBox())!.height).toBeGreaterThanOrEqual(48);
+
+    await switches.first().getByRole('link', { name: /^ES:/ }).click();
+    await expect(page).toHaveURL(/\/es\/$/);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Planea tu próxima siembra');
+    expect(await page.evaluate(() => localStorage.getItem('agroshift.lang'))).toBe('es');
+
+    // La preferencia guardada lleva de la ruta en inglés a la española
+    await page.goto('/');
+    await expect(page).toHaveURL(/\/es\/$/);
+
+    await page.getByRole('contentinfo').getByRole('link', { name: /^EN:/ }).click();
+    await expect(page).toHaveURL(/:4373\/$/);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Plan your next planting');
+    await page.goto('/fuentes/');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Scientific sources and tools');
+  });
+
+  test('flujo completo en inglés: quiz, plan y explicación con lang en la petición', async ({ page, context }) => {
+    await mockApi(context, { explain: 'contexto-firmado' });
+    let explainBody: { lang?: string; questionId?: string } = {};
+    await context.route('**/api/explain', async (route) => {
+      explainBody = route.request().postDataJSON();
+      await json(route, { questionId: 'less_water', source: 'model', items: [{ key: 'B:reasons:0', text: 'Model text for the test.' }] });
+    });
+    await page.goto('/');
+    const nextBtn = () => page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Enter coordinates manually' }).click();
+    await page.getByLabel('Latitude').fill('12.97');
+    await page.getByLabel('Longitude').fill('77.59');
+    await nextBtn();
+    await page.getByRole('radio', { name: 'I harvested it last' }).check();
+    await page.getByLabel('Crop name').fill('Maize');
+    await nextBtn();
+    await page.getByRole('radio', { name: 'What can I plant next?' }).check();
+    await nextBtn();
+    await page.getByRole('radio', { name: 'I have enough water' }).check();
+    await nextBtn();
+    await page.getByRole('radio', { name: 'I only know the month' }).check();
+    await page.getByLabel('Planting month').fill('2027-06');
+    await page.getByRole('button', { name: 'See my plan' }).click();
+
+    await expect(page.getByRole('heading', { name: 'Your plan for this planting' })).toBeFocused();
+    await expect(page.getByText('Your plan is ready')).toBeVisible();
+    await expect(page.getByRole('heading', { name: /^Plan A/ })).toBeVisible();
+    await expect(page.getByText('Scientific sources used', { exact: true })).toBeVisible();
+    await expect(page.locator('[data-ff="plan-a"]')).not.toContainText(/[áéíóúñ¿¡]/);
+
+    await page.getByRole('button', { name: 'What if I have less water?' }).click();
+    await expect(page.locator('[data-ff="answer"]')).toContainText('Model text for the test.');
+    await expect(page.locator('[data-ff="answer"]')).toContainText('artificial intelligence');
+    expect(explainBody).toMatchObject({ lang: 'en', questionId: 'less_water' });
   });
 });

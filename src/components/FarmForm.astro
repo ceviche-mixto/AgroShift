@@ -1,12 +1,14 @@
 ---
-import { CAMPOS, PASOS } from '../content/es.ts';
+import { dict, type Lang } from '../i18n/index.ts';
 import { CROPS } from '../domain/crops.ts';
 import { cropName } from '../domain/explain.ts';
 import LocationField from './LocationField.astro';
 
+const { lang } = Astro.props as { lang: Lang };
+const { CAMPOS, PASOS, FORMULARIO_EXTRA, BOTON_ENVIAR } = dict(lang);
 const { ubicacion, cultivo, objetivo, agua, siembra } = CAMPOS;
 const capital = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
-const rapidas = CROPS.map((c) => ({ id: c.id, nombre: capital(cropName(c.id)) }));
+const rapidas = CROPS.map((c) => ({ id: c.id, nombre: capital(cropName(c.id, lang)) }));
 ---
 <form data-ff="form" novalidate class="formulario">
   <div class="paso-encabezado">
@@ -28,7 +30,7 @@ const rapidas = CROPS.map((c) => ({ id: c.id, nombre: capital(cropName(c.id)) })
   <fieldset class="grupo" data-ff-step="ubicacion" aria-describedby="ayuda-ubicacion">
     <legend class="grupo__titulo">{ubicacion.etiqueta}</legend>
     <p id="ayuda-ubicacion" class="grupo__ayuda">{ubicacion.ayuda}</p>
-    <LocationField />
+    <LocationField lang={lang} />
     <p id="error-ubicacion" data-ff-error="ubicacion" class="grupo__error" hidden></p>
   </fieldset>
 
@@ -130,11 +132,11 @@ const rapidas = CROPS.map((c) => ({ id: c.id, nombre: capital(cropName(c.id)) })
       </label>
     </div>
     <div class="pila-corta siembra__dia">
-      <label for="planting_date" class="etiqueta etiqueta--fina">Día de siembra</label>
+      <label for="planting_date" class="etiqueta etiqueta--fina">{FORMULARIO_EXTRA.diaSiembra}</label>
       <input type="date" id="planting_date" name="planting_date" class="entrada" aria-describedby="error-siembra" />
     </div>
     <div class="pila-corta siembra__mes">
-      <label for="planting_month" class="etiqueta etiqueta--fina">Mes de siembra</label>
+      <label for="planting_month" class="etiqueta etiqueta--fina">{FORMULARIO_EXTRA.mesSiembra}</label>
       <input
         type="month"
         id="planting_month"
@@ -145,7 +147,7 @@ const rapidas = CROPS.map((c) => ({ id: c.id, nombre: capital(cropName(c.id)) })
         autocomplete="off"
         aria-describedby="ayuda-mes error-siembra"
       />
-      <p id="ayuda-mes" class="texto-suave">Si no ves un calendario, escribe el año y el mes así: 2027-06.</p>
+      <p id="ayuda-mes" class="texto-suave">{FORMULARIO_EXTRA.ayudaMes}</p>
     </div>
     <label class="opcion-fila">
       <input type="checkbox" name="planting_unknown" aria-describedby="error-siembra" />
@@ -157,8 +159,8 @@ const rapidas = CROPS.map((c) => ({ id: c.id, nombre: capital(cropName(c.id)) })
   <div class="paso-acciones">
     <button type="button" class="opcion" data-ff="back" hidden>{PASOS.atras}</button>
     <button type="button" class="boton" data-ff="next" aria-describedby="paso-pista" disabled>{PASOS.siguiente}</button>
-    <button type="submit" class="boton boton--principal" data-ff="submit" aria-describedby="paso-pista" hidden disabled>Ver mi plan</button>
+    <button type="submit" class="boton boton--principal" data-ff="submit" aria-describedby="paso-pista" hidden disabled>{BOTON_ENVIAR.reposo}</button>
   </div>
   <p id="paso-pista" class="texto-suave" data-ff="step-hint">{PASOS.pista}</p>
-  <p class="texto-suave" data-ff="last-note" hidden>Después del resultado podrás sumar datos de tu suelo y de tus cultivos anteriores.</p>
+  <p class="texto-suave" data-ff="last-note" hidden>{FORMULARIO_EXTRA.notaFinal}</p>
 </form>

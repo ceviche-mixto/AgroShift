@@ -1,7 +1,7 @@
 /* AgroShift service worker (JS plano, sin build).
  *
  * Lista y versión: en `install` y a cada mensaje `agroshift:prepare` el worker descarga `/`,
- * `/offline/` y `/fuentes/`, extrae de su HTML las URLs de `<link>`/`<script>` y todo `/_astro/*`, sigue
+ * `/offline/`, `/fuentes/` y sus versiones en español bajo `/es/`, extrae de su HTML las URLs de `<link>`/`<script>` y todo `/_astro/*`, sigue
  * recursivamente los imports (`./x.js`, `url(...)`, mapas de dependencias de Vite) de cada JS/CSS y
  * añade los JSON de /data/nasa/. La caché se llama `agroshift-<hash>`: el hash cubre los HTML, la
  * lista de URLs y el contenido de los JSON, así que cambia en cada despliegue. Un manifiesto (que se
@@ -12,7 +12,7 @@
  */
 var PREFIX = 'agroshift-';
 var MANIFEST = '/__agroshift_manifest__';
-var ROOTS = ['/', '/offline/', '/fuentes/'];
+var ROOTS = ['/', '/offline/', '/fuentes/', '/es/', '/es/offline/', '/es/fuentes/'];
 var DATA = ['/data/nasa/chiclayo.json', '/data/nasa/india.json', '/data/nasa/kenia.json'];
 var MAX_FILES = 300;
 var NAVIGATION_FALLBACK_STATUS = 500;
@@ -287,16 +287,21 @@ async function fromCache(pathnames) {
   return undefined;
 }
 
-/** Sin red: la propia ruta si está guardada, luego el shell `/`, luego `/offline/`. */
+/** Shell y página sin conexión del idioma de la ruta (`/es/...` es español; el resto, inglés). */
+function shellFor(pathname) {
+  return /^\/es(\/|$)/.test(pathname) ? ['/es/', '/es/offline/'] : ['/', '/offline/'];
+}
+
+/** Sin red: la propia ruta si está guardada, luego el shell del idioma, luego su página sin conexión. */
 async function offlineNavigation(url) {
-  return (await fromCache(pathVariants(url.pathname).concat(['/', '/offline/']))) || Response.error();
+  return (await fromCache(pathVariants(url.pathname).concat(shellFor(url.pathname)))) || Response.error();
 }
 
 async function navigate(request, url) {
   try {
     var res = await fetch(request);
     if (res.status < NAVIGATION_FALLBACK_STATUS) return res;
-    var fallback = await fromCache(pathVariants(url.pathname).concat(['/', '/offline/']));
+    var fallback = await fromCache(pathVariants(url.pathname).concat(shellFor(url.pathname)));
     return fallback || res;
   } catch (e) {
     return offlineNavigation(url);

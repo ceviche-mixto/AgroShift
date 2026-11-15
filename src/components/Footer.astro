@@ -1,12 +1,21 @@
 ---
-import { PIE } from '../content/es.ts';
+import { dict, pathFor, type Lang } from '../i18n/index.ts';
+import LangSwitch from './LangSwitch.astro';
+
+interface Props {
+  lang: Lang;
+  path: string;
+}
+const { lang, path } = Astro.props;
+const { PIE } = dict(lang);
 ---
 <footer class="pie">
   <div class="pie__contenido">
     <div class="pie__marca">
       <p class="pie__nombre">{PIE.nombre}</p>
       <p class="pie__aviso">{PIE.aviso}</p>
-      <p><a class="enlace" href="/fuentes/">{PIE.fuentes}</a></p>
+      <p><a class="enlace" href={pathFor(lang, '/fuentes/')}>{PIE.fuentes}</a></p>
+      <LangSwitch lang={lang} path={path} />
     </div>
     <div class="pie__evento">
       <p class="pie__evento-titulo">{PIE.evento}</p>

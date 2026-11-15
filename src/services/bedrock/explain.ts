@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { answerLocally, explainFinding, listFacts, questionText, type QuestionId } from '../../domain/explain.ts';
+import type { Lang } from '../../i18n/index.ts';
 import { serverEnv } from '../env.ts';
 import { consumeBudget } from '../supabase/cache.ts';
 import { factsVersion, type ExplainFacts } from './context.ts';
@@ -35,16 +36,32 @@ const outputSchema = z.strictObject({ keys: z.array(z.string().max(40)).min(1).m
 const answers = new Map<string, string[]>();
 let running = 0;
 
-const SYSTEM =
-  'Eres un selector de hechos. Recibes una pregunta de un agricultor y una lista de hechos, cada uno con una clave. ' +
-  `Elige hasta ${MAX_KEYS} claves de la lista, las que mejor responden la pregunta, en orden de importancia. ` +
-  'Responde solo con JSON de la forma {"keys":["clave"]}. No escribas texto, no inventes claves y no añadas hechos.';
+const PROMPTS: Record<Lang, { system: string; question: string; facts: string }> = {
+  es: {
+    system:
+      'Eres un selector de hechos. Recibes una pregunta de un agricultor y una lista de hechos, cada uno con una clave. ' +
+      `Elige hasta ${MAX_KEYS} claves de la lista, las que mejor responden la pregunta, en orden de importancia. ` +
+      'Responde solo con JSON de la forma {"keys":["clave"]}. No escribas texto, no inventes claves y no añadas hechos.',
+    question: 'Pregunta',
+    facts: 'Hechos',
+  },
+  en: {
+    system:
+      'You are a fact selector. You receive a farmer\'s question and a list of facts, each with a key. ' +
+      `Choose up to ${MAX_KEYS} keys from the list that best answer the question, in order of importance. ` +
+      'Reply only with JSON of the form {"keys":["key"]}. Write no text, do not invent keys and do not add facts.',
+    question: 'Question',
+    facts: 'Facts',
+  },
+};
 
 async function askModel(
   question: string,
   facts: { key: string; text: string }[],
   deps: ExplainDeps,
+  lang: Lang,
 ): Promise<string[]> {
+  const prompt = PROMPTS[lang];
   const token = serverEnv('AWS_BEARER_TOKEN_BEDROCK');
   const region = serverEnv('AWS_REGION');
   const model = serverEnv('BEDROCK_MODEL_ID');
@@ -59,11 +76,11 @@ async function askModel(
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        system: [{ text: SYSTEM }],
+        system: [{ text: prompt.system }],
         messages: [
           {
             role: 'user',
-            content: [{ text: `Pregunta: ${question}\nHechos:\n${facts.map((f) => `${f.key} | ${f.text}`).join('\n')}` }],
+            content: [{ text: `${prompt.question}: ${question}\n${prompt.facts}:\n${facts.map((f) => `${f.key} | ${f.text}`).join('\n')}` }],
           },
         ],
         inferenceConfig: { maxTokens: MAX_TOKENS, temperature: 0 },
@@ -81,9 +98,9 @@ async function askModel(
   return unique;
 }
 
-/** Nunca lanza: ante cualquier fallo devuelve la explicación local. */
-export async function explain(facts: ExplainFacts, questionId: QuestionId, deps: ExplainDeps = {}): Promise<Explanation> {
-  const all = listFacts(facts).map(({ key, fact }) => ({ key, text: explainFinding(fact) }));
+/** Nunca lanza: ante cualquier fallo devuelve la explicación local. El texto sale en el idioma pedido (español por defecto). */
+export async function explain(facts: ExplainFacts, questionId: QuestionId, deps: ExplainDeps = {}, lang: Lang = 'es'): Promise<Explanation> {
+  const all = listFacts(facts).map(({ key, fact }) => ({ key, text: explainFinding(fact, lang) }));
   const render = (keys: string[], source: Explanation['source']): Explanation => ({
     questionId,
     source,
@@ -101,7 +118,7 @@ export async function explain(facts: ExplainFacts, questionId: QuestionId, deps:
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     const keys = await Promise.race([
-      askModel(questionText(questionId), all, deps),
+      askModel(questionText(questionId, lang), all, deps, lang),
       // El plazo cubre también la consulta de cuota, que no se puede abortar
       new Promise<never>((_, reject) => {
         timer = setTimeout(() => reject(new Error('plazo_agotado')), deps.deadlineMs ?? EXPLAIN_DEADLINE_MS);

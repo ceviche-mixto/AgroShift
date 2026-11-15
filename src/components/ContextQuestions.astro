@@ -1,11 +1,14 @@
 ---
 import { QUESTION_IDS, questionText } from '../domain/explain.ts';
+import { dict, type Lang } from '../i18n/index.ts';
+
+const { lang } = Astro.props as { lang: Lang };
 ---
 <section class="pila" aria-labelledby="preguntas-titulo">
-  <h3 id="preguntas-titulo" class="subtitulo subtitulo--grande">Preguntas sobre tu plan</h3>
+  <h3 id="preguntas-titulo" class="subtitulo subtitulo--grande">{dict(lang).SECCIONES_PLAN.preguntas}</h3>
   <div class="preguntas">
     {QUESTION_IDS.map((id) => (
-      <button type="button" class="opcion" data-ff-question={id}>{questionText(id)}</button>
+      <button type="button" class="opcion" data-ff-question={id}>{questionText(id, lang)}</button>
     ))}
   </div>
   <div data-ff="answer" aria-live="polite" tabindex="-1" class="respuesta"></div>

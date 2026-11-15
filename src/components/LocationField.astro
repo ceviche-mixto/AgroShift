@@ -1,6 +1,8 @@
 ---
-import { CAMPOS, COORDENADAS_MANUAL } from '../content/es.ts';
+import { dict, type Lang } from '../i18n/index.ts';
 
+const { lang } = Astro.props as { lang: Lang };
+const { CAMPOS, COORDENADAS_MANUAL, FORMULARIO_EXTRA } = dict(lang);
 const c = CAMPOS.ubicacion;
 ---
 <div class="pila">
@@ -31,7 +33,7 @@ const c = CAMPOS.ubicacion;
   <div data-ff="location-status" aria-live="polite" class="texto-suave"></div>
 
   <fieldset data-ff="place-results" class="opciones" hidden>
-    <legend class="etiqueta">Elige tu localidad</legend>
+    <legend class="etiqueta">{FORMULARIO_EXTRA.eligeLocalidad}</legend>
   </fieldset>
 
   <div>
@@ -52,7 +54,7 @@ const c = CAMPOS.ubicacion;
           inputmode="decimal"
           autocomplete="off"
           spellcheck="false"
-          placeholder="-6,77"
+          placeholder={lang === 'en' ? '-6.77' : '-6,77'}
           aria-describedby="error-ubicacion"
         />
       </div>
@@ -66,7 +68,7 @@ const c = CAMPOS.ubicacion;
           inputmode="decimal"
           autocomplete="off"
           spellcheck="false"
-          placeholder="-79,84"
+          placeholder={lang === 'en' ? '-79.84' : '-79,84'}
           aria-describedby="error-ubicacion"
         />
       </div>

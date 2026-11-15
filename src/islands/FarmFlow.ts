@@ -2,10 +2,21 @@ import type { Alert, AnalyzeResponse, EvidenceRecord, FarmInput, Finding, Plan }
 import { findCrop, nameKeys, suggestCrops, type CropSuggestion } from '../domain/crops.ts';
 import { answerLocally, cropName, explainFinding, familyName, listFacts, needsIrrigation, type QuestionId, QUESTION_IDS } from '../domain/explain.ts';
 import { parseFarmInput } from '../domain/schemas.ts';
-import {
+import { DEFAULT_LANG, dict, isLang, type Lang } from '../i18n/index.ts';
+import { evidenceText } from '../i18n/evidence-en.ts';
+import type { Mensaje } from '../i18n/es.ts';
+import { analyzeFarm, FRESH_MS, type AnalyzeSuccess } from '../services/browser/analyze.ts';
+import { registerOffline } from '../services/browser/offline.ts';
+import { browserStorage, type SavedPlan } from '../services/browser/storage.ts';
+
+// El idioma lo fija la ruta (`/` inglés, `/es/` español): `<html lang>` ya viene en el HTML.
+const htmlLang = document.documentElement.lang;
+const lang: Lang = isLang(htmlLang) ? htmlLang : DEFAULT_LANG;
+const {
   ALERTA_FUEGO,
   BOTON_ENVIAR,
   cupoAgotado,
+  detalleFuego,
   ESTADO_FUENTE,
   ESTADO_FUENTE_FIRMS,
   ESTADOS,
@@ -17,9 +28,11 @@ import {
   CAMPOS,
   NATURALEZA_ESCENARIO,
   ORIGEN_DATO,
+  PANEL_FUENTES,
   PASOS,
   PLAN_INSIGNIA,
   PLAN_TITULO,
+  PLANES_GUARDADOS,
   planGuardado,
   RESPUESTA_ORIGEN,
   RESULTADO,
@@ -27,11 +40,7 @@ import {
   TONOS,
   UBICACION_ESTADO,
   UBICACION_EXTRA,
-  type Mensaje,
-} from '../content/es.ts';
-import { analyzeFarm, FRESH_MS, type AnalyzeSuccess } from '../services/browser/analyze.ts';
-import { registerOffline } from '../services/browser/offline.ts';
-import { browserStorage, type SavedPlan } from '../services/browser/storage.ts';
+} = dict(lang);
 
 // Isla ligera: mejora el HTML estático (formulario, plantillas, ganchos data-ff). Sin Supabase, NASA
 // ni Bedrock en el cliente: solo habla con /api/analyze, /api/explain y /api/location.
@@ -164,10 +173,11 @@ function init(root: HTMLElement) {
     return { input: null, errors };
   }
 
-  const commaNum = (n: number) => String(n).replace('.', ',');
+  /** Decimal de la ruta: coma en español, punto en inglés. */
+  const localNum = (n: number) => (lang === 'en' ? String(n) : String(n).replace('.', ','));
   function applyInput(input: FarmInput) {
-    field('lat').value = commaNum(input.location.lat);
-    field('lon').value = commaNum(input.location.lon);
+    field('lat').value = localNum(input.location.lat);
+    field('lon').value = localNum(input.location.lon);
     field('origin').value = input.location.origin;
     field('accuracy').value = input.location.accuracyM === null ? '' : String(input.location.accuracyM);
     field('place').value = '';
@@ -223,7 +233,7 @@ function init(root: HTMLElement) {
     notifyCrop();
     closeCropList();
   }
-  const suggestionValue = (s: CropSuggestion) => (s.kind === 'catalog' ? capital(cropName(s.cropId)) : capital(s.alias));
+  const suggestionValue = (s: CropSuggestion) => (s.kind === 'catalog' ? capital(cropName(s.cropId, lang)) : capital(s.alias));
   function renderCropList() {
     const items = cropUnknownBox.checked ? [] : suggestCrops(cropInput.value);
     if (!items.length) return closeCropList();
@@ -238,7 +248,7 @@ function init(root: HTMLElement) {
         li.dataset.value = value;
         const hint =
           s.kind === 'family'
-            ? CAMPOS.cultivo.sugerenciaFamilia(familyName(s.groupId))
+            ? CAMPOS.cultivo.sugerenciaFamilia(familyName(s.groupId, lang))
             : nameKeys(s.alias).join() !== nameKeys(value).join()
               ? s.alias
               : '';
@@ -388,8 +398,8 @@ function init(root: HTMLElement) {
     say(UBICACION_ESTADO.buscandoGps);
     navigator.geolocation.getCurrentPosition(
       (p) => {
-        field('lat').value = commaNum(Number(p.coords.latitude.toFixed(5)));
-        field('lon').value = commaNum(Number(p.coords.longitude.toFixed(5)));
+        field('lat').value = localNum(Number(p.coords.latitude.toFixed(5)));
+        field('lon').value = localNum(Number(p.coords.longitude.toFixed(5)));
         field('origin').value = 'gps';
         field('accuracy').value = String(Math.round(p.coords.accuracy));
         placeResults.hidden = true;
@@ -417,11 +427,11 @@ function init(root: HTMLElement) {
       if (!body.places.length) return sayManual(UBICACION_ESTADO.sinCoincidencias);
       const options = body.places.map((p) => {
         const label = clone('place-option');
-        fill(label, { name: p.detail ? `${p.name}, ${p.detail}` : p.name, coords: `${commaNum(p.lat)}, ${commaNum(p.lon)}` });
+        fill(label, { name: p.detail ? `${p.name}, ${p.detail}` : p.name, coords: `${localNum(p.lat)}, ${localNum(p.lon)}` });
         const radio = one<HTMLInputElement>('input', label);
         radio.addEventListener('change', () => {
-          field('lat').value = commaNum(p.lat);
-          field('lon').value = commaNum(p.lon);
+          field('lat').value = localNum(p.lat);
+          field('lon').value = localNum(p.lon);
           field('origin').value = 'place_search';
           field('accuracy').value = '';
           setError('ubicacion', null);
@@ -447,7 +457,7 @@ function init(root: HTMLElement) {
   // ---------- Resultado ----------
 
   let current: { input: FarmInput; response: AnalyzeResponse; origin: AnalyzeSuccess['origin'] } | null = null;
-  const facts = (f: Finding[]) => f.map(explainFinding);
+  const facts = (f: Finding[]) => f.map((x) => explainFinding(x, lang));
 
   function renderPlan(role: 'A' | 'B', plan: Plan | null) {
     const mount = ff(role === 'A' ? 'plan-a' : 'plan-b');
@@ -462,7 +472,7 @@ function init(root: HTMLElement) {
       const condition = plan.completeness === 'incomplete' ? PLAN_INSIGNIA.falta : needsIrrigation(plan) ? PLAN_INSIGNIA.riego : '';
       fill(el, {
         role: ROL_PLAN[role],
-        title: plan.kind === 'fallow' ? PLAN_TITULO.descanso : plan.cropIds.length ? plan.cropIds.map(cropName).join(', luego ') : PLAN_TITULO.porDefinir,
+        title: plan.kind === 'fallow' ? PLAN_TITULO.descanso : plan.cropIds.length ? plan.cropIds.map((c) => cropName(c, lang)).join(PLANES_GUARDADOS.separadorCultivos) : PLAN_TITULO.porDefinir,
         condition,
         intro: NATURALEZA_ESCENARIO[plan.scenario.nature],
       });
@@ -476,7 +486,7 @@ function init(root: HTMLElement) {
     mount.replaceChildren(el);
   }
 
-  const day = (iso: string) => new Date(iso).toLocaleDateString('es', { dateStyle: 'medium' });
+  const day = (iso: string) => new Date(iso).toLocaleDateString(lang, { dateStyle: 'medium' });
 
   function renderSources(response: AnalyzeResponse) {
     const { records, sources } = response.result.climate;
@@ -499,18 +509,18 @@ function init(root: HTMLElement) {
       }
       const link = one<HTMLAnchorElement>('[data-slot="link"]', li);
       link.href = r.dataset.url;
-      link.textContent = `${r.dataset.product} (versión ${r.dataset.version})`;
+      link.textContent = `${r.dataset.product} (${PANEL_FUENTES.version(r.dataset.version)})`;
       fill(li, {
         name: FUENTES[r.source],
-        variable: r.variable,
+        variable: evidenceText(lang, r.variable),
         unit: r.unit,
-        period: `${r.period.start} a ${r.period.end}`,
+        period: PANEL_FUENTES.rango(r.period.start, r.period.end),
         retrieved: day(r.retrievedAt),
-        scale: r.grid.nativeResolution,
-        validity: r.cache.expiresAt ? `Vigente hasta ${day(r.cache.expiresAt)}` : 'Copia guardada, sin fecha de vencimiento',
+        scale: evidenceText(lang, r.grid.nativeResolution),
+        validity: r.cache.expiresAt ? PANEL_FUENTES.vigenteHasta(day(r.cache.expiresAt)) : PANEL_FUENTES.sinVencimiento,
         origin: ORIGEN_DATO[r.cache.origin],
       });
-      list(li, [`Datos válidos: ${r.coverage.validCount} de ${r.coverage.expectedCount}`, ...r.limitations], 'limitations');
+      list(li, [PANEL_FUENTES.validos(r.coverage.validCount, r.coverage.expectedCount), ...r.limitations.map((l) => evidenceText(lang, l))], 'limitations');
       return li;
     });
     ff('sources-list').replaceChildren(...nodes);
@@ -520,8 +530,8 @@ function init(root: HTMLElement) {
     const box = ff('alerts');
     box.replaceChildren(
       ...alerts.map((a) => {
-        const km = a.nearestKm.toLocaleString('es', { maximumFractionDigits: 0 });
-        return message({ ...ALERTA_FUEGO, explicacion: `${ALERTA_FUEGO.explicacion} Detecciones en las últimas 24 horas: ${a.count}; la más cercana, a unos ${km} km.` });
+        const km = a.nearestKm.toLocaleString(lang, { maximumFractionDigits: 0 });
+        return message({ ...ALERTA_FUEGO, explicacion: `${ALERTA_FUEGO.explicacion} ${detalleFuego(a.count, km)}` });
       }),
     );
     box.hidden = alerts.length === 0;
@@ -630,7 +640,7 @@ function init(root: HTMLElement) {
       const id = ++askId;
       const { result, explain } = current.response;
       const texts = (keys: string[]) => {
-        const byKey = new Map(listFacts(result).map((f) => [f.key, explainFinding(f.fact)]));
+        const byKey = new Map(listFacts(result).map((f) => [f.key, explainFinding(f.fact, lang)]));
         return keys.flatMap((k) => byKey.get(k) ?? []);
       };
       const box = ff('answer');
@@ -644,7 +654,7 @@ function init(root: HTMLElement) {
       paint(RESPUESTA_ORIGEN.local, localItems);
       // Bedrock solo se invoca por esta pregunta, y la respuesta local ya está en pantalla
       if (!explain || !navigator.onLine) return;
-      void fetch('/api/explain', { method: 'POST', body: JSON.stringify({ context: explain, questionId }), signal: AbortSignal.timeout(REQUEST_MS) })
+      void fetch('/api/explain', { method: 'POST', body: JSON.stringify({ context: explain, questionId, lang }), signal: AbortSignal.timeout(REQUEST_MS) })
         .then((r) => (r.ok ? r.json() : null))
         .then((body: { source?: string; items?: { text?: unknown }[] } | null) => {
           if (id !== askId || body?.source !== 'model' || !Array.isArray(body.items)) return;
@@ -667,9 +677,9 @@ function init(root: HTMLElement) {
       ...plans.map((p) => {
         const li = clone('saved-item');
         li.dataset.id = p.id;
-        fill(li, { title: p.label, date: new Date(p.savedAt).toLocaleDateString('es', { dateStyle: 'medium' }) });
-        one('[data-act="open"]', li).setAttribute('aria-label', `Ver ${p.label}`);
-        one('[data-act="delete"]', li).setAttribute('aria-label', `Quitar ${p.label}`);
+        fill(li, { title: p.label, date: new Date(p.savedAt).toLocaleDateString(lang, { dateStyle: 'medium' }) });
+        one('[data-act="open"]', li).setAttribute('aria-label', PLANES_GUARDADOS.ver(p.label));
+        one('[data-act="delete"]', li).setAttribute('aria-label', PLANES_GUARDADOS.quitar(p.label));
         return li;
       }),
     );
@@ -680,10 +690,12 @@ function init(root: HTMLElement) {
   ff('save').addEventListener('click', async () => {
     if (!current) return;
     await storage.ready();
-    if (!storage.persistent) return setStatus({ tono: 'aviso', titulo: 'No se guardó', explicacion: GUARDADO_ESTADO.error });
-    await storage.savePlan(current.input, current.response);
+    if (!storage.persistent) return setStatus({ tono: 'aviso', titulo: PLANES_GUARDADOS.tituloError, explicacion: GUARDADO_ESTADO.error });
+    const { input } = current;
+    const label = PLANES_GUARDADOS.etiqueta(input.crop.status === 'known' ? input.crop.name : null, input.location.lat, input.location.lon, new Date().toISOString().slice(0, 10));
+    await storage.savePlan(input, current.response, label);
     await refreshSaved();
-    setStatus({ tono: 'exito', titulo: 'Plan guardado', explicacion: GUARDADO_ESTADO.guardado });
+    setStatus({ tono: 'exito', titulo: PLANES_GUARDADOS.tituloGuardado, explicacion: GUARDADO_ESTADO.guardado });
   });
 
   savedList.addEventListener('click', async (e) => {
@@ -693,7 +705,7 @@ function init(root: HTMLElement) {
     if (btn.dataset.act === 'delete') {
       await storage.deletePlan(id);
       await refreshSaved();
-      setStatus({ tono: 'info', titulo: 'Plan quitado', explicacion: GUARDADO_ESTADO.quitado });
+      setStatus({ tono: 'info', titulo: PLANES_GUARDADOS.tituloQuitado, explicacion: GUARDADO_ESTADO.quitado });
       savedTitle.focus();
       return;
     }

@@ -1,8 +1,12 @@
 ---
 // Texto técnico solo dentro del detalle. La isla clona `source` por cada dataset realmente usado.
+import { dict, type Lang } from '../i18n/index.ts';
+
+const { lang } = Astro.props as { lang: Lang };
+const { PANEL_FUENTES: P } = dict(lang);
 ---
 <details data-ff="sources" class="fuentes">
-  <summary class="fuentes__resumen">Fuentes Científicas Utilizadas</summary>
+  <summary class="fuentes__resumen">{P.resumen}</summary>
   <div class="fuentes__cuerpo">
     <ul data-ff="sources-list" class="fuentes__lista"></ul>
   </div>
@@ -13,14 +17,14 @@
       <p><a data-slot="link" href="#" target="_blank" rel="noopener noreferrer" class="enlace"></a></p>
       <div data-slot="state"></div>
       <dl class="fuente__datos">
-        <div><dt>Qué mide</dt><dd data-slot="variable" class="dato-tecnico"></dd></div>
-        <div><dt>Unidad</dt><dd data-slot="unit"></dd></div>
-        <div><dt>Periodo</dt><dd data-slot="period"></dd></div>
-        <div><dt>Fecha del dato</dt><dd data-slot="retrieved"></dd></div>
-        <div><dt>Escala</dt><dd data-slot="scale"></dd></div>
-        <div><dt>Vigencia</dt><dd data-slot="validity"></dd></div>
-        <div><dt>Origen</dt><dd data-slot="origin"></dd></div>
-        <div><dt>Limitaciones</dt><dd><ul data-slot="limitations" class="lista"></ul></dd></div>
+        <div><dt>{P.queMide}</dt><dd data-slot="variable" class="dato-tecnico"></dd></div>
+        <div><dt>{P.unidad}</dt><dd data-slot="unit"></dd></div>
+        <div><dt>{P.periodo}</dt><dd data-slot="period"></dd></div>
+        <div><dt>{P.fechaDato}</dt><dd data-slot="retrieved"></dd></div>
+        <div><dt>{P.escala}</dt><dd data-slot="scale"></dd></div>
+        <div><dt>{P.vigencia}</dt><dd data-slot="validity"></dd></div>
+        <div><dt>{P.origen}</dt><dd data-slot="origin"></dd></div>
+        <div><dt>{P.limitaciones}</dt><dd><ul data-slot="limitations" class="lista"></ul></dd></div>
       </dl>
     </li>
   </template>

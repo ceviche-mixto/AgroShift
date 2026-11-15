@@ -187,3 +187,24 @@ describe('POST /api/explain', () => {
     }
   });
 });
+
+describe('idioma de la explicación', () => {
+  it('en inglés: texto local y consulta al modelo en inglés', async () => {
+    const f = facts();
+    const net = reply('{"keys":["A:reasons:0"]}');
+    const out = await explain(f, 'why_plan_a', { fetch: net, consume: allow }, 'en');
+    expect(out.source).toBe('model');
+    expect(out.items[0]!.text).toBe(explainFinding(listFacts(f)[0]!.fact, 'en'));
+    expect(out.items[0]!.text).toMatch(/local technician/);
+    const sent = JSON.parse(String((net.mock.calls[0] as [string, RequestInit])[1].body));
+    expect(sent.messages[0].content[0].text).toContain('Question: Why is Plan A proposed to me?');
+    expect(sent.system[0].text).toMatch(/^You are a fact selector/);
+  });
+
+  it('sin modelo: la explicación local también sale en el idioma pedido', async () => {
+    const out = await explain(facts(), 'what_to_check', { fetch: reply('no es json'), consume: allow }, 'en');
+    expect(out.source).toBe('local');
+    expect(out.items.length).toBeGreaterThan(0);
+    for (const i of out.items) expect(i.text).not.toMatch(/técnico/);
+  });
+});

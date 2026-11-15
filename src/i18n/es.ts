@@ -1,5 +1,6 @@
 // Textos visibles en español. Módulo puro: solo tipos del contrato (se borran al compilar).
 // Los metadatos científicos (producto, versión, unidad, resolución) NO van aquí: salen del contrato.
+// `en.ts` es su espejo exacto (mismos nombres y misma forma): tests/i18n/mirror.test.ts lo comprueba.
 import type {
   CacheOrigin,
   CropAnswer,
@@ -434,7 +435,7 @@ export const PIE = {
   fuentes: 'Fuentes científicas y herramientas',
   aviso: 'Uso orientativo: AgroShift no reemplaza la revisión en tu campo ni a un técnico agrónomo.',
   evento: 'NASA Space Apps Challenge Chiclayo 2026',
-  equipo: 'Equipo: por completar',
+  equipo: 'Equipo OneCtrl: Giancarlo Luciano Larios Infantes, Enzo Gabriel García Infantes y Sergio Anibal Tuesta Rodas',
 } as const;
 
 export interface FuenteEnlace {
@@ -508,3 +509,95 @@ export const PAGINA_FUENTES = {
   herramientas: { titulo: string; items: readonly FuenteEnlace[] };
   volver: string;
 };
+
+// ---------- Idioma, páginas y textos fijos de la interfaz ----------
+
+/** Selector EN | ES. `etiqueta` describe la acción de cada botón (lectores de pantalla). */
+export const IDIOMA = {
+  grupo: 'Idioma',
+  en: { corto: 'EN', nombre: 'English', etiqueta: 'EN: cambiar el idioma a inglés' },
+  es: { corto: 'ES', nombre: 'Español', etiqueta: 'ES: cambiar el idioma a español' },
+} as const;
+
+export const SITIO = {
+  saltar: 'Saltar al contenido',
+  descripcion: 'AgroShift: compara dos opciones de siembra para tu campo.',
+  inicio: {
+    titulo: 'Planea tu próxima siembra',
+    intro: 'Responde cinco preguntas y compara dos opciones para tu campo.',
+    resultados: 'Tu plan para esta siembra',
+    guardados: 'Tus planes guardados',
+    editar: 'Cambiar mis respuestas',
+    guardar: 'Guardar este plan',
+    actualizar: 'Actualizar con datos nuevos',
+    ver: 'Ver',
+    quitar: 'Quitar',
+  },
+  fuentes: {
+    titulo: 'Fuentes científicas y herramientas · AgroShift',
+    descripcion: 'De dónde salen los datos de AgroShift y con qué herramientas se hizo.',
+  },
+  sinConexion: {
+    titulo: 'Sin conexión · AgroShift',
+    descripcion: 'AgroShift sin conexión: qué puedes hacer cuando no hay datos guardados.',
+    encabezado: 'Sin conexión',
+    etiqueta: 'Sin dato',
+    estadoTitulo: 'No hay datos guardados',
+    explicacion:
+      'Estás sin conexión y este dispositivo no tiene una copia de lo que buscas. Para usar AgroShift sin conexión, ábrelo una vez con internet y espera el aviso de que quedó listo. Una primera visita sin red no se puede abrir.',
+    siguientePaso: 'Vuelve al inicio: ahí puedes ver los planes que ya guardaste.',
+    volver: 'Volver al inicio',
+  },
+} as const;
+
+export const FORMULARIO_EXTRA = {
+  diaSiembra: 'Día de siembra',
+  mesSiembra: 'Mes de siembra',
+  ayudaMes: 'Si no ves un calendario, escribe el año y el mes así: 2027-06.',
+  notaFinal: 'Después del resultado podrás sumar datos de tu suelo y de tus cultivos anteriores.',
+  eligeLocalidad: 'Elige tu localidad',
+} as const;
+
+export const SECCIONES_PLAN = {
+  queFalta: 'Qué falta',
+  cuandoCambiar: 'Cuándo cambiar al otro plan',
+  porQue: 'Por qué',
+  tenEnCuenta: 'Ten en cuenta',
+  queHacer: 'Qué hacer',
+  queRevisar: 'Qué revisar',
+  preguntas: 'Preguntas sobre tu plan',
+  alertas: 'Alertas de tu zona',
+} as const;
+
+export const PANEL_FUENTES = {
+  resumen: 'Fuentes Científicas Utilizadas',
+  queMide: 'Qué mide',
+  unidad: 'Unidad',
+  periodo: 'Periodo',
+  fechaDato: 'Fecha del dato',
+  escala: 'Escala',
+  vigencia: 'Vigencia',
+  origen: 'Origen',
+  limitaciones: 'Limitaciones',
+  version: (v: string) => `versión ${v}`,
+  rango: (inicio: string, fin: string) => `${inicio} a ${fin}`,
+  vigenteHasta: (fecha: string) => `Vigente hasta ${fecha}`,
+  sinVencimiento: 'Copia guardada, sin fecha de vencimiento',
+  validos: (n: number, total: number) => `Datos válidos: ${n} de ${total}`,
+} as const;
+
+/** Detalle que se suma al aviso de fuego. `km` ya viene formateado. */
+export const detalleFuego = (cantidad: number, km: string) =>
+  `Detecciones en las últimas 24 horas: ${cantidad}; la más cercana, a unos ${km} km.`;
+
+export const PLANES_GUARDADOS = {
+  tituloError: 'No se guardó',
+  tituloGuardado: 'Plan guardado',
+  tituloQuitado: 'Plan quitado',
+  ver: (etiqueta: string) => `Ver ${etiqueta}`,
+  quitar: (etiqueta: string) => `Quitar ${etiqueta}`,
+  /** Nombre de un plan guardado: cultivo · coordenadas · fecha. */
+  etiqueta: (cultivo: string | null, lat: number, lon: number, fecha: string) =>
+    `${cultivo ?? 'Cultivo sin indicar'} · ${lat.toFixed(2)}, ${lon.toFixed(2)} · ${fecha}`,
+  separadorCultivos: ', luego ',
+} as const;

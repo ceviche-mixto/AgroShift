@@ -152,21 +152,25 @@ body {
 .opcion:hover { background: var(--opcion-hover-fondo); }
 .opcion:active { background: var(--opcion-activo-fondo); }
 .opcion[aria-pressed="true"],
-.opcion[aria-checked="true"] {
+.opcion[aria-checked="true"],
+.opcion[aria-current="true"] {
   background: var(--color-primario);
   color: var(--color-primario-texto);
   border-color: var(--color-primario);
   box-shadow: inset 0 0 0 2px var(--color-primario-texto);
 }
 .opcion[aria-pressed="true"]::before,
-.opcion[aria-checked="true"]::before {
+.opcion[aria-checked="true"]::before,
+.opcion[aria-current="true"]::before {
   content: "\2714\FE0E";
   content: "\2714\FE0E" / "";
 }
 .opcion[aria-pressed="true"]:hover,
-.opcion[aria-checked="true"]:hover { background: var(--color-primario-hover); }
+.opcion[aria-checked="true"]:hover,
+.opcion[aria-current="true"]:hover { background: var(--color-primario-hover); }
 .opcion[aria-pressed="true"]:active,
-.opcion[aria-checked="true"]:active { background: var(--opcion-elegida-activo-fondo); }
+.opcion[aria-checked="true"]:active,
+.opcion[aria-current="true"]:active { background: var(--opcion-elegida-activo-fondo); }
 .opcion:disabled,
 .opcion[aria-disabled="true"] {
   background: var(--opcion-off-fondo);
@@ -182,7 +186,7 @@ body {
   .estado, .opcion { border-color: CanvasText; }
   .estado__simbolo { color: CanvasText; }
   .espera__giro { border-color: CanvasText; border-top-color: transparent; }
-  .opcion[aria-pressed="true"], .opcion[aria-checked="true"] {
+  .opcion[aria-pressed="true"], .opcion[aria-checked="true"], .opcion[aria-current="true"] {
     background: Highlight;
     color: HighlightText;
     border-color: Highlight;
@@ -427,3 +431,8 @@ body {
 .pie__evento { display: grid; gap: 0.25rem; padding: 1rem; background: var(--color-fondo); border: 2px solid var(--color-borde); border-radius: 0.5rem; }
 .pie__evento-titulo { font-weight: 700; }
 .pie__equipo { color: var(--color-texto-suave); font-size: 1rem; }
+
+/* Selector de idioma EN | ES: dos enlaces con el tamaño táctil de .opcion; el activo lleva aria-current. */
+.cabecera { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; }
+.idioma { display: inline-flex; gap: 0.5rem; }
+.idioma .opcion { min-height: var(--tamano-tactil); padding: 0.25rem 1rem; text-decoration: none; }

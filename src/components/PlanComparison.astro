@@ -1,5 +1,9 @@
 ---
 // Plan A y Plan B juntos. La isla clona la plantilla `plan` en cada montaje y rellena los slots.
+import { dict, type Lang } from '../i18n/index.ts';
+
+const { lang } = Astro.props as { lang: Lang };
+const { SECCIONES_PLAN: S } = dict(lang);
 ---
 <div class="pila">
   <div data-ff="result-state"></div>
@@ -10,7 +14,7 @@
   </div>
 
   <section data-ff="missing" class="pila-corta" aria-labelledby="falta-titulo" hidden>
-    <h3 id="falta-titulo" class="subtitulo">Qué falta</h3>
+    <h3 id="falta-titulo" class="subtitulo">{S.queFalta}</h3>
     <ul data-slot="list" class="lista"></ul>
   </section>
 
@@ -24,23 +28,23 @@
       <p data-slot="intro" class="plan__intro"></p>
 
       <div data-group="signals" class="plan__grupo">
-        <h4 class="subtitulo">Cuándo cambiar al otro plan</h4>
+        <h4 class="subtitulo">{S.cuandoCambiar}</h4>
         <ul data-slot="list" class="lista"></ul>
       </div>
       <div data-group="reasons" class="plan__grupo">
-        <h4 class="subtitulo">Por qué</h4>
+        <h4 class="subtitulo">{S.porQue}</h4>
         <ul data-slot="list" class="lista"></ul>
       </div>
       <div data-group="restrictions" class="plan__grupo">
-        <h4 class="subtitulo">Ten en cuenta</h4>
+        <h4 class="subtitulo">{S.tenEnCuenta}</h4>
         <ul data-slot="list" class="lista"></ul>
       </div>
       <div data-group="actions" class="plan__grupo">
-        <h4 class="subtitulo">Qué hacer</h4>
+        <h4 class="subtitulo">{S.queHacer}</h4>
         <ul data-slot="list" class="lista"></ul>
       </div>
       <div data-group="toverify" class="plan__grupo">
-        <h4 class="subtitulo">Qué revisar</h4>
+        <h4 class="subtitulo">{S.queRevisar}</h4>
         <ul data-slot="list" class="lista"></ul>
       </div>
     </article>
