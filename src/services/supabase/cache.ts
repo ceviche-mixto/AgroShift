@@ -77,6 +77,33 @@ export async function readClimate(key: ClimateKey, now = new Date()): Promise<Ca
 }
 
 /**
+ * Última lectura utilizable de la misma fuente, versión y celda, sea cual sea su ventana. Para fuentes de
+ * tiempo casi real (FIRMS) cuya ventana cambia cada día: tras una caída se muestra la última lectura con su
+ * fecha, nunca como dato actual. Respeta `usable_until`. `null` = nada utilizable.
+ */
+export async function readLatestClimate(key: ClimateKey, now = new Date()): Promise<CachedClimate | null> {
+  const { data, error } = await getServerSupabase()
+    .from('climate_cache')
+    .select('payload, retrieved_at, expires_at, usable_until')
+    .match({ source: key.source, product_version: key.productVersion, schema_version: key.schemaVersion, cell_id: key.cellId })
+    .gt('usable_until', now.toISOString())
+    .order('retrieved_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) fail('readLatestClimate', error);
+  if (!data?.payload || !data.retrieved_at || !data.expires_at || !data.usable_until) return null;
+  const records = recordsSchema.safeParse(data.payload);
+  if (!records.success) return null;
+  return {
+    records: records.data,
+    retrievedAt: data.retrieved_at,
+    expiresAt: data.expires_at,
+    fresh: now.getTime() < Date.parse(data.expires_at),
+    ageSeconds: Math.max(0, Math.floor((now.getTime() - Date.parse(data.retrieved_at)) / 1000)),
+  };
+}
+
+/**
  * Concesión temporal de refresco, atómica entre instancias. `null` = otra instancia la tiene
  * o el dato sigue vigente y no se fuerza: en ambos casos se sirve lo que ya hay.
  */

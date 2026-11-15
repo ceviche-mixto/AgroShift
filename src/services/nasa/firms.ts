@@ -15,8 +15,8 @@ const DAY_RANGE = 2;
 /** Radio desde el centro de la celda de 0,1° (~11 km). */
 export const FIRMS_RADIUS_KM = 15;
 export const FIRMS_TTL_MS = 15 * 60_000;
-/** Uso máximo como instantánea previa. */
-export const FIRMS_USABLE_MS = 3_600_000;
+/** Uso máximo como última lectura guardada (siempre con su fecha); una alerta activa exige datos de hasta 1 h. */
+export const FIRMS_USABLE_MS = 24 * 3_600_000;
 /** Una alerta activa exige recuperación de hasta 1 h y una detección de las últimas 24 h. */
 export const FIRMS_ALERT_MAX_RETRIEVAL_MS = 3_600_000;
 export const FIRMS_ALERT_MAX_DETECTION_MS = 24 * 3_600_000;

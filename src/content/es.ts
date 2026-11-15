@@ -258,6 +258,25 @@ export const ESTADO_FUENTE: Record<SourceState, Mensaje> = {
   },
 };
 
+/**
+ * FIRMS sin respuesta no es una alerta de fuego: un aviso rojo se confundiría con un incendio real.
+ * Tono neutro (gris para «no disponible», ámbar suave para «última lectura guardada»).
+ */
+export const ESTADO_FUENTE_FIRMS: Partial<Record<SourceState, Mensaje>> = {
+  unavailable: {
+    tono: 'sindato',
+    titulo: 'Monitoreo de focos de calor no disponible',
+    explicacion: 'Monitoreo satelital de focos de calor temporalmente no disponible (NASA FIRMS).',
+    siguientePaso: 'Verifica visualmente quemas cercanas antes de sembrar.',
+  },
+  stale: {
+    tono: 'aviso',
+    titulo: 'Última lectura guardada de focos de calor',
+    explicacion: 'Usamos la última lectura guardada, con su fecha. No muestra el momento actual.',
+    siguientePaso: 'Verifica visualmente quemas cercanas antes de sembrar.',
+  },
+};
+
 // ---------- Fuentes, evidencia, escenarios ----------
 
 export const FUENTES: Record<Source, string> = {

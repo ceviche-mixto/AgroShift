@@ -7,6 +7,7 @@ import {
   BOTON_ENVIAR,
   cupoAgotado,
   ESTADO_FUENTE,
+  ESTADO_FUENTE_FIRMS,
   ESTADOS,
   FLUJO,
   FUENTES,
@@ -489,7 +490,7 @@ function init(root: HTMLElement) {
     const nodes = items.map((it) => {
       const li = clone('source');
       const r = it.r;
-      one('[data-slot="state"]', li).replaceChildren(...(it.state === 'available' ? [] : [message(ESTADO_FUENTE[it.state])]));
+      one('[data-slot="state"]', li).replaceChildren(...(it.state === 'available' ? [] : [message((it.source === 'firms' && ESTADO_FUENTE_FIRMS[it.state]) || ESTADO_FUENTE[it.state])]));
       if (!r) {
         fill(li, { name: FUENTES[it.source] });
         li.querySelector('[data-slot="link"]')?.parentElement?.remove();

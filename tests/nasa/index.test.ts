@@ -86,7 +86,7 @@ describe('parámetros por fuente', () => {
     expect(p.power).toMatchObject({ ttlMs: 24 * 3_600_000, usableMs: 7 * DAY, maxObservationAgeDays: 10 });
     expect(p.smap).toMatchObject({ ttlMs: 24 * 3_600_000, usableMs: 7 * DAY, maxObservationAgeDays: 10 });
     expect(p.giovanni).toMatchObject({ ttlMs: 30 * DAY, usableMs: 180 * DAY, maxObservationAgeDays: 90 });
-    expect(p.firms).toMatchObject({ ttlMs: 15 * MIN, usableMs: 60 * MIN });
+    expect(p.firms).toMatchObject({ ttlMs: 15 * MIN, usableMs: 24 * 60 * MIN });
     expect(p.smap?.live).toBeUndefined();
     expect(p.giovanni?.live).toBeUndefined();
   });
@@ -180,9 +180,48 @@ describe('getClimateEvidence', () => {
     expect(activeFirmsAlert(stale, at(40 * MIN)()).active).toBe(true); // recuperación de hace 40 min: aún cabe
     expect(activeFirmsAlert(stale, at(61 * MIN)()).active).toBe(false);
 
-    const gone = await getClimateEvidence(q, { fetch: down, cache, snapshots: [], now: at(90 * MIN), random: () => 0, deadlineMs: 50 });
+    // Pasada la hora sigue siendo la última lectura guardada (con su edad), pero ya nunca una alerta actual
+    const old = await getClimateEvidence(q, { fetch: down, cache, snapshots: [], now: at(90 * MIN), random: () => 0, deadlineMs: 50 });
+    expect(stateOf(old, 'firms')).toMatchObject({ state: 'stale', ageSeconds: 90 * 60, detail: 'instantanea_previa' });
+    expect(activeFirmsAlert(old.records.find((r) => r.source === 'firms')!, at(90 * MIN)()).active).toBe(false);
+
+    // Vencido el uso máximo (24 h) ya no queda nada utilizable
+    const gone = await getClimateEvidence(q, { fetch: down, cache, snapshots: [], now: at(25 * 60 * MIN), random: () => 0, deadlineMs: 50 });
     expect(gone.records.some((r) => r.source === 'firms')).toBe(false);
     expect(stateOf(gone, 'firms')?.state).toBe('unavailable');
+  });
+
+  it('FIRMS caído o lento: usa la última lectura guardada aunque la ventana de hoy ya sea otra, con su fecha y sin alerta', async () => {
+    const { cache, rows } = memoryCache();
+    const row = '-6.8,-79.8,333,0.4,0.4,2026-01-02,800,N20,VIIRS,n,2.0NRT,300,4.6,D';
+    await getClimateEvidence(q, { fetch: network({ power: 'ok', firms: 'ok' }, row), cache, snapshots: [], now: at(0) });
+    const withLatest: Cache = {
+      ...cache,
+      readLatest: async (key, now = new Date()) => {
+        const hit = [...rows]
+          .map(([k, r]) => ({ k: JSON.parse(k) as ClimateKey, r }))
+          .filter(({ k, r }) => k.source === key.source && k.cellId === key.cellId && k.productVersion === key.productVersion && now.getTime() < Date.parse(r.usableUntil))
+          .sort((a, b) => b.r.retrievedAt.localeCompare(a.r.retrievedAt))[0];
+        return hit
+          ? { records: hit.r.records, retrievedAt: hit.r.retrievedAt, expiresAt: hit.r.expiresAt, fresh: false, ageSeconds: Math.floor((now.getTime() - Date.parse(hit.r.retrievedAt)) / 1000) }
+          : null;
+      },
+    };
+    const next = at(13 * 60 * MIN); // pasada la medianoche UTC: la ventana (ayer y hoy) ya es otra
+
+    // Sin la lectura de otra ventana no hay nada que mostrar
+    const without = await getClimateEvidence(q, { fetch: network({ power: 'ok', firms: '500' }), cache, snapshots: [], now: next, random: () => 0, deadlineMs: 50 });
+    expect(stateOf(without, 'firms')?.state).toBe('unavailable');
+
+    for (const mode of ['500', 'hang'] as const) {
+      const ev = await getClimateEvidence(q, { fetch: network({ power: 'ok', firms: mode }), cache: withLatest, snapshots: [], now: next, random: () => 0, deadlineMs: 50 });
+      const rec = ev.records.find((r) => r.source === 'firms')!;
+      expect(origins(ev, 'firms')).toEqual(['stale_snapshot']);
+      expect(stateOf(ev, 'firms')).toMatchObject({ state: 'stale', ageSeconds: 13 * 3600, detail: 'instantanea_previa' });
+      expect(rec.retrievedAt).toBe(t0.toISOString()); // la fecha de la lectura original se conserva
+      expect(activeFirmsAlert(rec, next()).active).toBe(false);
+      expect(climateEvidenceSchema.safeParse(ev).success).toBe(true);
+    }
   });
 
   it('Supabase caído: consulta en vivo sin caché', async () => {

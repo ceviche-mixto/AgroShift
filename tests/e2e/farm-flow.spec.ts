@@ -537,3 +537,30 @@ test.describe('paso 2: elegir y reconocer el cultivo', () => {
     await expect(page.locator('body')).toContainText('regla general por familia');
   });
 });
+
+test.describe('FIRMS sin respuesta', () => {
+  test('aviso neutro y sin cuadro rojo de alerta que parezca un incendio', async ({ page, context }) => {
+    await context.route('**/api/analyze', (route) => {
+      const base = responseFor(bodyOf(route));
+      const { climate } = base.result;
+      const firms = { source: 'firms' as const, state: 'unavailable' as const, ageSeconds: null, detail: 'plazo_agotado' };
+      const result = {
+        ...base.result,
+        climate: { ...climate, sources: [...climate.sources.filter((s) => s.source !== 'firms'), firms], records: climate.records.filter((r) => r.source !== 'firms') },
+      };
+      return json(route, { ...base, alerts: [], explain: null, result });
+    });
+    await page.goto('/');
+    await fillForm(page);
+    await submit(page);
+    await page.getByText('Fuentes Científicas Utilizadas', { exact: true }).click();
+
+    const aviso = page.locator('.estado', { hasText: 'Monitoreo satelital de focos de calor temporalmente no disponible (NASA FIRMS).' });
+    await expect(aviso).toBeVisible();
+    await expect(aviso).toContainText('Verifica visualmente quemas cercanas antes de sembrar.');
+    await expect(aviso).toHaveClass(/estado--sindato/);
+    await expect(aviso).not.toContainText('Alerta');
+    await expect(page.locator('.estado--alerta', { hasText: /calor|FIRMS/ })).toHaveCount(0);
+    await expect(page.getByText('Posible foco de calor cerca')).toBeHidden();
+  });
+});

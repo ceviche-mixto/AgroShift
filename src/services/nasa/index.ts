@@ -11,6 +11,7 @@ import {
   acquireClimateRefresh,
   publishClimateRefresh,
   readClimate,
+  readLatestClimate,
   releaseClimateRefresh,
   type ClimateKey,
 } from '../supabase/cache.ts';
@@ -62,6 +63,8 @@ export interface Provider {
   usableMs: number;
   /** Máxima antigüedad de la última observación para una evaluación actual. `null` = no aplica. */
   maxObservationAgeDays: number | null;
+  /** Tras fallar la consulta en vivo, usa la última lectura guardada de la celda aunque su ventana ya no sea la de hoy. */
+  latestFallback?: boolean;
   /** Ausente = la ruta web solo lee lo que dejó la ingesta. */
   live?(q: ClimateQuery, ctx: LiveContext): Promise<LiveResult>;
 }
@@ -90,18 +93,22 @@ export const PROVIDERS: Provider[] = [
     ttlMs: FIRMS_TTL_MS,
     usableMs: FIRMS_USABLE_MS,
     maxObservationAgeDays: null,
+    latestFallback: true,
     live: (q, ctx) => fetchFirms(q, ctx),
   },
 ];
 
 export interface Cache {
   read: typeof readClimate;
+  /** Opcional: sin ella no hay respaldo de última lectura. */
+  readLatest?: typeof readLatestClimate;
   acquire: typeof acquireClimateRefresh;
   publish: typeof publishClimateRefresh;
   release: typeof releaseClimateRefresh;
 }
 const SUPABASE_CACHE: Cache = {
   read: readClimate,
+  readLatest: readLatestClimate,
   acquire: acquireClimateRefresh,
   publish: publishClimateRefresh,
   release: releaseClimateRefresh,
@@ -198,6 +205,12 @@ async function runSource(p: Provider, q: ClimateQuery, now: Date, signal: AbortS
   if (cached?.records.length === 0) cached = null;
   if (cached?.fresh) return present(p, relabel(cached.records, 'shared_cache', cached.expiresAt), q, now);
 
+  // En paralelo a la consulta en vivo: si esta falla o vence el plazo, la última lectura ya está en mano
+  const latest =
+    p.latestFallback && !cached && cacheUp && cache.readLatest
+      ? within(cache.readLatest(key, now), signal).catch(() => null)
+      : null;
+
   let failure: string | null = null;
   const allowed = !p.live || !o.beforeLive || (await within(o.beforeLive(p.source), signal).catch(() => false));
   if (!allowed) failure = 'cupo_agotado';
@@ -236,6 +249,8 @@ async function runSource(p: Provider, q: ClimateQuery, now: Date, signal: AbortS
     }
   }
   if (cached) return present(p, relabel(cached.records, 'stale_snapshot', cached.expiresAt), q, now);
+  const last = latest ? await latest : null;
+  if (last && last.records.length > 0) return present(p, relabel(last.records, 'stale_snapshot', last.expiresAt), q, now);
   const local = matchSnapshot(o.snapshots ?? SNAPSHOTS, p.source, q);
   if (local.length > 0) return present(p, local, q, now);
   return failure ? none(p, 'unavailable', failure) : none(p, 'insufficient_coverage', 'sin_datos_para_celda_y_ventana');
