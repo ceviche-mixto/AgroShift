@@ -1,22 +1,17 @@
-import type { ClimateQuery, EvidenceRecord, Source } from '../../domain/contracts.ts';
-import { evidenceRecordSchema } from '../../domain/schemas.ts';
 import chiclayo from '../../data/nasa/chiclayo.json' with { type: 'json' };
 import india from '../../data/nasa/india.json' with { type: 'json' };
 import kenia from '../../data/nasa/kenia.json' with { type: 'json' };
 import { readClimate } from '../supabase/cache.ts';
 import { giovanniKey } from './giovanni.ts';
-import { cellIds } from './grid.ts';
+import { matchSnapshot, type Snapshot } from './match.ts';
 import { fetchPower } from './power.ts';
 import { smapKey } from './smap.ts';
 
 // Respaldo local: instantáneas REALES de los tres casos de demostración. Se aceptan solo si
 // coinciden la celda del producto y la ventana exacta; si no, se descartan.
 
-export interface Snapshot {
-  /** Ventana de la consulta que generó la instantánea. Sin ella vale el periodo de cada registro. */
-  meta?: { window?: { start: string; end: string } };
-  records: unknown[];
-}
+// Puro y sin Supabase: vive en match.ts para que el navegador lo use. Se reexporta para el servidor.
+export { matchSnapshot, type Snapshot };
 
 export const SNAPSHOTS: Snapshot[] = [chiclayo, india, kenia];
 
@@ -25,31 +20,6 @@ export const SNAPSHOT_ATTRIBUTION = [
   'SMAP L4 Global 3-hourly 9 km Surface and Root Zone Soil Moisture (SPL4SMGP v008), NASA NSIDC DAAC, vía AppEEARS. https://doi.org/10.5067/T5RUATAQREF8',
   'GLDAS Noah Land Surface Model L4 3 hourly 0.25 x 0.25 degree V2.1, NASA GES DISC, vía Giovanni in Cloud. https://doi.org/10.5067/E7TYRXPJKWOQ',
 ];
-
-/** Registros del respaldo para esta fuente, celda y ventana. Vacío si nada coincide. */
-export function matchSnapshot(snapshots: Snapshot[], source: Source, q: ClimateQuery): EvidenceRecord[] {
-  const cells = cellIds(source, q.lat, q.lon);
-  return snapshots.flatMap((s) =>
-    s.records
-      .flatMap((r) => {
-        const parsed = evidenceRecordSchema.safeParse(r);
-        return parsed.success ? [parsed.data] : [];
-      })
-      .filter((r) => {
-        // Un estadístico (anomalía de un mes) tiene periodo propio: manda la ventana de la instantánea
-        const window = s.meta?.window ?? r.period;
-        return (
-          r.source === source &&
-          r.cache.origin === 'local_snapshot' &&
-          cells.includes(r.grid.cellId) &&
-          window.start === q.window.start &&
-          window.end === q.window.end &&
-          r.period.start >= q.window.start &&
-          r.period.end <= q.window.end
-        );
-      }),
-  );
-}
 
 export const DEMO_WINDOW = { start: '2025-01-01', end: '2025-12-31' } as const;
 export const DEMO_CASES = [
