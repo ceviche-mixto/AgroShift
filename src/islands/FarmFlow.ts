@@ -1,5 +1,6 @@
 import type { Alert, AnalyzeResponse, EvidenceRecord, FarmInput, Finding, Plan } from '../domain/contracts.ts';
-import { answerLocally, cropName, explainFinding, listFacts, needsIrrigation, type QuestionId, QUESTION_IDS } from '../domain/explain.ts';
+import { findCrop, nameKeys, suggestCrops, type CropSuggestion } from '../domain/crops.ts';
+import { answerLocally, cropName, explainFinding, familyName, listFacts, needsIrrigation, type QuestionId, QUESTION_IDS } from '../domain/explain.ts';
 import { parseFarmInput } from '../domain/schemas.ts';
 import {
   ALERTA_FUEGO,
@@ -188,6 +189,122 @@ function init(root: HTMLElement) {
     sync();
   }
 
+  // ---------- Cultivo: opciones grandes y autocompletado con sinónimos ----------
+
+  const cropInput = field('crop_name');
+  const cropUnknownBox = field('crop_unknown');
+  const cropPicks = [...form.querySelectorAll<HTMLButtonElement>('[data-ff-crop-pick]')];
+  const cropOther = ff<HTMLButtonElement>('crop-other');
+  const cropList = ff<HTMLUListElement>('crop-suggestions');
+  const capital = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+  let activeOption = -1;
+
+  /** Marca la opción grande que coincide con lo escrito (sinónimos incluidos); «Otro cultivo» si no hay ficha. */
+  function paintCropPicks() {
+    const typed = cropInput.value.trim();
+    const hit = typed ? findCrop(typed) : null;
+    for (const b of cropPicks) b.setAttribute('aria-pressed', String(!cropUnknownBox.checked && !!hit && b.dataset.cropId === hit.id));
+    cropOther.setAttribute('aria-pressed', String(!cropUnknownBox.checked && !!typed && !hit));
+  }
+  const notifyCrop = () => cropInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+  function closeCropList() {
+    cropList.style.visibility = '';
+    cropList.hidden = true;
+    cropList.replaceChildren();
+    activeOption = -1;
+    cropInput.setAttribute('aria-expanded', 'false');
+    cropInput.removeAttribute('aria-activedescendant');
+  }
+  function chooseCrop(value: string) {
+    cropUnknownBox.checked = false;
+    cropInput.value = value;
+    notifyCrop();
+    closeCropList();
+  }
+  const suggestionValue = (s: CropSuggestion) => (s.kind === 'catalog' ? capital(cropName(s.cropId)) : capital(s.alias));
+  function renderCropList() {
+    const items = cropUnknownBox.checked ? [] : suggestCrops(cropInput.value);
+    if (!items.length) return closeCropList();
+    cropList.replaceChildren(
+      ...items.map((s, i) => {
+        const li = document.createElement('li');
+        li.id = `crop-opt-${i}`;
+        li.setAttribute('role', 'option');
+        li.setAttribute('aria-selected', 'false');
+        li.className = 'combo__opcion';
+        const value = suggestionValue(s);
+        li.dataset.value = value;
+        const hint =
+          s.kind === 'family'
+            ? CAMPOS.cultivo.sugerenciaFamilia(familyName(s.groupId))
+            : nameKeys(s.alias).join() !== nameKeys(value).join()
+              ? s.alias
+              : '';
+        li.append(Object.assign(document.createElement('strong'), { textContent: value }));
+        if (hint) li.append(Object.assign(document.createElement('span'), { textContent: ` (${hint})`, className: 'texto-suave' }));
+        return li;
+      }),
+    );
+    activeOption = -1;
+    cropList.style.visibility = '';
+    cropList.hidden = false;
+    cropInput.setAttribute('aria-expanded', 'true');
+    cropInput.removeAttribute('aria-activedescendant');
+  }
+  function moveOption(to: number) {
+    const opts = [...cropList.children] as HTMLElement[];
+    if (!opts.length) return;
+    activeOption = (to + opts.length) % opts.length;
+    opts.forEach((o, i) => o.setAttribute('aria-selected', String(i === activeOption)));
+    cropInput.setAttribute('aria-activedescendant', opts[activeOption]!.id);
+    opts[activeOption]!.scrollIntoView?.({ block: 'nearest' });
+  }
+
+  for (const b of cropPicks) b.addEventListener('click', () => chooseCrop(b.dataset.ffCropPick!));
+  cropOther.addEventListener('click', () => {
+    cropUnknownBox.checked = false;
+    if (findCrop(cropInput.value)) cropInput.value = '';
+    notifyCrop();
+    cropInput.focus();
+  });
+  cropInput.addEventListener('input', (e) => e.isTrusted && renderCropList());
+  // Al salir del campo la lista se oculta pero conserva su espacio hasta terminar el clic: si se colapsara
+  // en el mousedown, el botón que se está tocando («Siguiente») se movería y el clic se perdería.
+  cropInput.addEventListener('blur', () => {
+    if (cropList.hidden) return;
+    cropList.style.visibility = 'hidden';
+    const done = () => {
+      clearTimeout(timer);
+      window.removeEventListener('click', done, true);
+      if (document.activeElement !== cropInput) closeCropList();
+    };
+    const timer = setTimeout(done, 600);
+    window.addEventListener('click', done, true);
+  });
+  cropInput.addEventListener('keydown', (e) => {
+    if (cropList.hidden) {
+      if (e.key === 'ArrowDown') renderCropList(), moveOption(0);
+      return;
+    }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      moveOption(activeOption + (e.key === 'ArrowDown' ? 1 : -1));
+    } else if (e.key === 'Enter' && activeOption >= 0) {
+      e.preventDefault(); // elegir la sugerencia no avanza de paso
+      chooseCrop((cropList.children[activeOption] as HTMLElement).dataset.value!);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      closeCropList();
+    }
+  });
+  // Mantiene el foco en el campo al tocar una sugerencia
+  cropList.addEventListener('pointerdown', (e) => e.preventDefault());
+  cropList.addEventListener('click', (e) => {
+    const li = (e.target as HTMLElement).closest<HTMLElement>('[role="option"]');
+    if (li) chooseCrop(li.dataset.value!);
+  });
+
   // ---------- Pasos (una pregunta a la vez; los campos siguen en el DOM, solo se ocultan) ----------
 
   const steps = GROUPS.map((g) => one<HTMLElement>(`[data-ff-step="${g}"]`));
@@ -205,6 +322,7 @@ function init(root: HTMLElement) {
 
   /** Habilita «Siguiente» / «Ver mi plan» solo cuando el paso actual está bien respondido. */
   function sync() {
+    paintCropPicks();
     const ok = stepValid();
     next.disabled = !ok;
     submit.disabled = !ok;

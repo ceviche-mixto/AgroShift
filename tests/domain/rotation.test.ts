@@ -220,6 +220,34 @@ describe('incertidumbre', () => {
     expect(JSON.stringify(r)).not.toMatch(/quinua|chacra/i);
   });
 
+  it.each([
+    ['espárrago', 'perennial'],
+    ['caña de azúcar', 'perennial'],
+    ['Tomates', 'vegetable'],
+    ['Papa', 'tuber'],
+  ])('cultivo fuera de las fichas «%s»: regla general por familia, declarada y sin plan incompleto', (previous, family) => {
+    const r = run(farm({ previous }), warmWet);
+    expect(r.status).toBe('ok');
+    for (const plan of [r.planA!, r.planB!]) {
+      expect(plan.completeness).not.toBe('incomplete');
+      expect(ids(plan.toVerify)).toContain('verify.previous_crop_family_rule');
+      expect(ids(plan.toVerify)).not.toContain('verify.previous_crop_not_in_catalog');
+    }
+    // Tras una familia sin ficha se prefiere una leguminosa, y el motivo dice que es una regla general
+    expect(CROPS.find((c) => c.id === r.planA!.cropIds[0])?.group).toBe('legume');
+    expect(r.planA!.reasons).toContainEqual(
+      expect.objectContaining({ id: 'reason.legume_after_family', ruleId: 'rotation-legume-cereal', params: { crop: r.planA!.cropIds[0], family } }),
+    );
+    expect(findingsOf(r).map((f) => f.id)).not.toContain('reason.not_repeated');
+  });
+
+  it('un sinónimo regional se trata como el cultivo de la ficha (choclo = maíz, frejol = frijol)', () => {
+    const viaSynonym = run(farm({ previous: 'choclo', goal: 'care_soil' }), warmWet);
+    const viaName = run(farm({ previous: 'maíz', goal: 'care_soil' }), warmWet);
+    expect(viaSynonym).toEqual(viaName);
+    expect(run(farm({ previous: 'Frejol' }), warmWet)).toEqual(run(farm({ previous: 'frijol' }), warmWet));
+  });
+
   it('fecha de siembra desconocida: no inventa calendario', () => {
     const r = run(farm({ previous: 'maíz', planting: { status: 'unknown' } }), warmWet);
     expect(r.status).toBe('partial');

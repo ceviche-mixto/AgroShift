@@ -10,7 +10,9 @@ import {
   cropRegionSchema,
   cropSchema,
   findCrop,
+  findGeneralGroup,
   regionFor,
+  suggestCrops,
   ruleSchema,
 } from '../../src/domain/crops.ts';
 
@@ -104,8 +106,81 @@ describe('findCrop', () => {
 
   it('devuelve null para lo que no está, sin acercar al más parecido', () => {
     expect(findCrop('quinua')).toBeNull();
-    expect(findCrop('maíces')).toBeNull();
+    expect(findCrop('maizal')).toBeNull();
     expect(findCrop('')).toBeNull();
+    expect(findCrop('   ')).toBeNull();
+  });
+
+  it.each([
+    ['choclo', 'maize'],
+    ['Elote', 'maize'],
+    ['MAZORCA', 'maize'],
+    ['frejol', 'common_bean'],
+    ['Poroto', 'common_bean'],
+    ['caraota', 'common_bean'],
+    ['alubia', 'common_bean'],
+    ['paddy', 'rice'],
+    ['ARROZ', 'rice'],
+    ['chana', 'chickpea'],
+    ['frejol castilla', 'cowpea'],
+  ])('sinónimo regional «%s» → %s', (name, id) => {
+    expect(findCrop(name)?.id).toBe(id);
+  });
+
+  it('ignora tildes, mayúsculas, espacios extra, puntuación y plurales', () => {
+    expect(findCrop('  MAÍZ.  ')?.id).toBe('maize');
+    expect(findCrop('maices')?.id).toBe('maize');
+    expect(findCrop('Maíces')?.id).toBe('maize');
+    expect(findCrop('frijoles')?.id).toBe('common_bean');
+    expect(findCrop('frijoles   comunes')?.id).toBe('common_bean');
+    expect(findCrop('porotos')?.id).toBe('common_bean');
+    expect(findCrop('garbanzos')?.id).toBe('chickpea');
+    expect(findCrop('chocLOS')?.id).toBe('maize');
+  });
+});
+
+describe('findGeneralGroup', () => {
+  it.each([
+    ['espárrago', 'perennial'],
+    ['Caña de azúcar', 'perennial'],
+    ['caña  de azucar', 'perennial'],
+    ['tomate', 'vegetable'],
+    ['Tomates', 'vegetable'],
+    ['cebollas', 'vegetable'],
+    ['patata', 'tuber'],
+    ['PAPA', 'tuber'],
+    ['papas', 'tuber'],
+  ])('cultivo fuera de las fichas «%s» → grupo %s', (name, group) => {
+    expect(findCrop(name)).toBeNull();
+    expect(findGeneralGroup(name)?.id).toBe(group);
+  });
+
+  it('un cultivo con ficha o desconocido no cae en un grupo general', () => {
+    expect(findGeneralGroup('maíz')).toBeNull();
+    expect(findGeneralGroup('quinua')).toBeNull();
+    expect(findGeneralGroup('')).toBeNull();
+  });
+});
+
+describe('suggestCrops', () => {
+  it('reconoce sinónimos mientras se escribe', () => {
+    expect(suggestCrops('cho')[0]).toMatchObject({ kind: 'catalog', cropId: 'maize', alias: 'choclo' });
+    expect(suggestCrops('fre')[0]).toMatchObject({ kind: 'catalog', cropId: 'common_bean' });
+    expect(suggestCrops('ARR')[0]).toMatchObject({ kind: 'catalog', cropId: 'rice' });
+    expect(suggestCrops('tom')[0]).toMatchObject({ kind: 'family', groupId: 'vegetable', alias: 'tomate' });
+  });
+
+  it('una coincidencia exacta con plural va primero y no repite cultivos', () => {
+    expect(suggestCrops('papas')[0]).toMatchObject({ kind: 'family', groupId: 'tuber' });
+    const out = suggestCrops('fr', 20);
+    const ids = out.filter((s) => s.kind === 'catalog').map((s) => (s as { cropId: string }).cropId);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('sin texto o sin coincidencias no sugiere nada y respeta el límite', () => {
+    expect(suggestCrops('   ')).toEqual([]);
+    expect(suggestCrops('zzzz')).toEqual([]);
+    expect(suggestCrops('a', 3).length).toBeLessThanOrEqual(3);
   });
 });
 

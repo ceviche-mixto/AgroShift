@@ -32,6 +32,10 @@ const CROP_NAMES: Record<string, string> = {
   finger_millet: 'mijo dedo',
 };
 
+const FAMILY_NAMES: Record<string, string> = { vegetable: 'hortaliza', tuber: 'tubérculo', perennial: 'cultivo perenne' };
+/** Nombre cotidiano del grupo general de un cultivo sin ficha propia. */
+export const familyName = (groupId: unknown): string => (typeof groupId === 'string' && FAMILY_NAMES[groupId]) || 'cultivo sin ficha';
+
 /** Nombre cotidiano en español del cultivo canónico. Un ID sin nombre se muestra sin guiones. */
 export function cropName(cropId: string): string {
   return CROP_NAMES[cropId] ?? cropId.replace(/[_-]+/g, ' ');
@@ -50,6 +54,8 @@ const TEMPLATES = {
     `Después de ${crop(p.previous)}, que es leguminosa, un cereal como ${crop(p.crop)} aprovecha el nitrógeno que queda en el suelo.`,
   'reason.legume_after_cereal': (p) =>
     `Después de ${crop(p.previous)}, que es cereal, ${crop(p.crop)} alterna el cultivo: es leguminosa y deja nitrógeno para el cereal que siembres luego.`,
+  'reason.legume_after_family': (p) =>
+    `Tu cultivo anterior es de tipo ${familyName(p.family)} y no tiene ficha propia: se usó una regla general por familia de cultivo. ${crop(p.crop)} es leguminosa y deja nitrógeno en el suelo.`,
   'reason.thermal_optimal': (p) =>
     `La temperatura media de esas fechas en el año de referencia (${n(p.tempC)} °C) está en el rango ideal de ${crop(p.crop)} (${n(p.min)} a ${n(p.max)} °C).`,
   'reason.thermal_within_limits': (p) =>
@@ -100,6 +106,8 @@ const TEMPLATES = {
     'No sabemos qué cultivo hubo antes: confirma que no sea el mismo que te proponemos, porque no conviene repetirlo.',
   'verify.previous_crop_not_in_catalog': () =>
     'Tu cultivo anterior no está en nuestro catálogo y no pudimos revisar la rotación: confirma la secuencia con un técnico local.',
+  'verify.previous_crop_family_rule': (p) =>
+    `La rotación se calculó con una regla general para ${familyName(p.family)}, no con la ficha de tu cultivo anterior: confirma la secuencia con un técnico local.`,
   'verify.planting_date': () => 'Indica al menos el mes de siembra: sin fecha no podemos comparar el clima con ningún cultivo.',
   'verify.water_availability': (p) =>
     `No sabemos cuánta agua tendrás: la lluvia del año de referencia (cerca de ${n(p.rainMm)} mm) no alcanza el mínimo de ${crop(p.crop)} (${n(p.minMm)} mm al año).`,

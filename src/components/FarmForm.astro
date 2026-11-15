@@ -1,8 +1,12 @@
 ---
 import { CAMPOS, PASOS } from '../content/es.ts';
+import { CROPS } from '../domain/crops.ts';
+import { cropName } from '../domain/explain.ts';
 import LocationField from './LocationField.astro';
 
 const { ubicacion, cultivo, objetivo, agua, siembra } = CAMPOS;
+const capital = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+const rapidas = CROPS.map((c) => ({ id: c.id, nombre: capital(cropName(c.id)) }));
 ---
 <form data-ff="form" novalidate class="formulario">
   <div class="paso-encabezado">
@@ -41,8 +45,15 @@ const { ubicacion, cultivo, objetivo, agua, siembra } = CAMPOS;
         <span>{cultivo.etapa.last_harvested}</span>
       </label>
     </div>
-    <div class="pila-corta">
+    <div class="cultivos-rapidos" role="group" aria-label={cultivo.rapidas}>
+      {rapidas.map((c) => (
+        <button type="button" class="opcion" aria-pressed="false" data-ff-crop-pick={c.nombre} data-crop-id={c.id}>{c.nombre}</button>
+      ))}
+      <button type="button" class="opcion" aria-pressed="false" data-ff="crop-other">{cultivo.otro}</button>
+    </div>
+    <div class="pila-corta combo">
       <label for="crop_name" class="etiqueta etiqueta--fina">{cultivo.nombre}</label>
+      <p id="ayuda-buscador-cultivo" class="grupo__ayuda">{cultivo.buscadorAyuda}</p>
       <input
         type="text"
         id="crop_name"
@@ -50,8 +61,13 @@ const { ubicacion, cultivo, objetivo, agua, siembra } = CAMPOS;
         class="entrada"
         autocomplete="off"
         autocapitalize="none"
-        aria-describedby="error-cultivo"
+        role="combobox"
+        aria-autocomplete="list"
+        aria-expanded="false"
+        aria-controls="crop-sugerencias"
+        aria-describedby="error-cultivo ayuda-buscador-cultivo"
       />
+      <ul id="crop-sugerencias" class="combo__lista" role="listbox" aria-label={cultivo.sugerencias} data-ff="crop-suggestions" hidden></ul>
     </div>
     <label class="opcion-fila">
       <input type="checkbox" name="crop_unknown" aria-describedby="error-cultivo" />

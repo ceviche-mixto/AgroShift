@@ -155,7 +155,10 @@
         "choclo",
         "mahindi",
         "makai",
-        "makki"
+        "makki",
+        "elote",
+        "mazorca",
+        "jojoto"
       ],
       "temperature": {
         "unit": "°C",
@@ -406,7 +409,12 @@
         "poroto",
         "common bean",
         "kidney bean",
-        "haricot"
+        "haricot",
+        "frejol",
+        "caraota",
+        "alubia",
+        "judía",
+        "habichuela"
       ],
       "temperature": {
         "unit": "°C",
@@ -491,7 +499,8 @@
         "cow pea",
         "frijol caupí",
         "frijol de vaca",
-        "niebe"
+        "niebe",
+        "frejol castilla"
       ],
       "temperature": {
         "unit": "°C",
@@ -575,7 +584,8 @@
         "garbanzo bean",
         "chickpea",
         "bengal gram",
-        "mdengu"
+        "mdengu",
+        "chana"
       ],
       "temperature": {
         "unit": "°C",
@@ -658,7 +668,9 @@
         "sorgo",
         "sorghum",
         "jowar",
-        "mtama"
+        "mtama",
+        "milo",
+        "maicillo"
       ],
       "temperature": {
         "unit": "°C",
@@ -830,6 +842,78 @@
           "note": "Sin fuente regional por cultivo para Nairobi: FEWS NET describe temporadas por condados y Nairobi no figura; no hay ficha KALRO leída."
         }
       ]
+    }
+  ],
+  "generalGroups": [
+    {
+      "id": "vegetable",
+      "aliases": [
+        "tomate",
+        "jitomate",
+        "cebolla",
+        "ajo",
+        "zanahoria",
+        "lechuga",
+        "pimiento",
+        "ají",
+        "rocoto",
+        "pepino",
+        "zapallo",
+        "calabaza",
+        "col",
+        "repollo",
+        "brócoli",
+        "coliflor",
+        "apio",
+        "espinaca",
+        "betarraga",
+        "remolacha",
+        "berenjena",
+        "sandía",
+        "melón"
+      ],
+      "note": "Clasificación general por tipo de cultivo (hortaliza); no es una ficha del cultivo."
+    },
+    {
+      "id": "tuber",
+      "aliases": [
+        "papa",
+        "patata",
+        "camote",
+        "batata",
+        "yuca",
+        "mandioca",
+        "olluco",
+        "oca",
+        "mashua",
+        "arracacha"
+      ],
+      "note": "Clasificación general por tipo de cultivo (tubérculo o raíz); no es una ficha del cultivo."
+    },
+    {
+      "id": "perennial",
+      "aliases": [
+        "espárrago",
+        "caña de azúcar",
+        "café",
+        "cacao",
+        "banano",
+        "plátano",
+        "palta",
+        "aguacate",
+        "mango",
+        "uva",
+        "vid",
+        "limón",
+        "naranja",
+        "mandarina",
+        "olivo",
+        "manzano",
+        "durazno",
+        "arándano",
+        "maracuyá"
+      ],
+      "note": "Clasificación general por tipo de cultivo (perenne o frutal); no es una ficha del cultivo."
     }
   ]
 }

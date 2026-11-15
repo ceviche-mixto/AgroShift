@@ -195,7 +195,8 @@ test.describe('formulario y resultado', () => {
     await k.press('Enter'); // avanza al paso 2
     await stepLabel(page, 2);
     await expect(page.getByRole('radio', { name: 'Lo cultivo ahora' })).toBeFocused(); // foco al primer control del paso
-    await k.press('Tab'); // nombre del cultivo
+    for (let i = 0; i < 10; i++) await k.press('Tab'); // etapa → 8 cultivos + «Otro cultivo» → nombre del cultivo
+    await expect(page.getByLabel('Nombre del cultivo')).toBeFocused();
     await k.type('Maíz');
     await k.press('Enter');
     await stepLabel(page, 3);
@@ -480,5 +481,59 @@ test.describe('pie de página y fuentes', () => {
       await expect(page.getByRole('heading', { level: 3, name })).toBeVisible();
     }
     await expect(page.getByRole('contentinfo')).toBeVisible();
+  });
+});
+
+test.describe('paso 2: elegir y reconocer el cultivo', () => {
+  test('opciones grandes, sinónimos regionales y «Otro cultivo»', async ({ page, context }) => {
+    await mockApi(context);
+    await page.goto('/');
+    await setCoords(page, INDIA.lat, INDIA.lon);
+    await next(page);
+    await stepLabel(page, 2);
+    const crop = page.getByLabel('Nombre del cultivo');
+
+    // Opciones táctiles grandes con los cultivos del catálogo
+    for (const name of ['Maíz', 'Arroz', 'Trigo', 'Frijol', 'Caupí', 'Garbanzo', 'Sorgo', 'Mijo dedo']) {
+      const b = await page.getByRole('button', { name, exact: true }).boundingBox();
+      expect(b!.height).toBeGreaterThanOrEqual(47.5);
+    }
+    await page.getByRole('button', { name: 'Garbanzo', exact: true }).click();
+    await expect(crop).toHaveValue('Garbanzo');
+    await expect(page.getByRole('button', { name: 'Garbanzo', exact: true })).toHaveAttribute('aria-pressed', 'true');
+
+    // Un sinónimo regional se reconoce mientras se escribe y se elige con el teclado sin avanzar de paso
+    await crop.fill('chocl');
+    const option = page.getByRole('option', { name: /Maíz/ });
+    await expect(option).toContainText('choclo');
+    expect((await option.boundingBox())!.height).toBeGreaterThanOrEqual(47.5);
+    await crop.press('ArrowDown');
+    await crop.press('Enter');
+    await expect(crop).toHaveValue('Maíz');
+    await stepLabel(page, 2);
+    await expect(page.getByRole('button', { name: 'Maíz', exact: true })).toHaveAttribute('aria-pressed', 'true');
+
+    // Mayúsculas y plurales también se entienden
+    await crop.fill('FRIJOLES');
+    await expect(page.getByRole('option', { name: /Frijol/ }).first()).toBeVisible();
+
+    // Fuera del catálogo: se sugiere con su grupo, y «Otro cultivo» queda marcado
+    await crop.fill('tomate');
+    const tomato = page.getByRole('option', { name: /Tomate/ });
+    await expect(tomato).toContainText('sin ficha propia');
+    await tomato.click();
+    await expect(crop).toHaveValue('Tomate');
+    await expect(page.getByRole('button', { name: 'Otro cultivo', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByRole('button', { name: 'Siguiente' })).toBeEnabled();
+  });
+
+  test('cultivo fuera de las fichas: plan completo con regla general por familia declarada', async ({ page, context }) => {
+    await mockApi(context);
+    await page.goto('/');
+    await fillForm(page, { crop: 'Papa' });
+    await submit(page);
+    await expect(page.getByText('Tu plan está listo')).toBeVisible();
+    await expect(page.getByText('Plan incompleto')).toBeHidden();
+    await expect(page.locator('body')).toContainText('regla general por familia');
   });
 });

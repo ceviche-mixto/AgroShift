@@ -1,5 +1,5 @@
 import type { AnalysisResult, ClimateEvidence, FarmInput, Finding, Plan, Scenario, WaterLevel } from './contracts.ts';
-import { CROPS, RULES, findCrop, regionFor, type Crop, type Rule } from './crops.ts';
+import { CROPS, RULES, findCrop, findGeneralGroup, regionFor, type Crop, type GeneralGroup, type Rule } from './crops.ts';
 import type { FindingId } from './explain.ts';
 import { alternativeFor, REFERENCE, type Alternative } from './scenarios.ts';
 
@@ -52,6 +52,8 @@ import { alternativeFor, REFERENCE, type Alternative } from './scenarios.ts';
 // | Falta POWER, fuente no disponible o cobertura bajo el umbral     | insufficient_evidence + missing         |
 // | Fecha de siembra desconocida                                     | partial: A incompleto sin cultivo       |
 // | Cultivo previo desconocido o fuera de catálogo (sin rotación)    | partial: A y B incompletos              |
+// | Cultivo previo sin ficha pero de grupo conocido (hortaliza,      | regla general por familia: prefiere     |
+// | tubérculo, perenne)                                              | leguminosa y lo declara; no es incompleto|
 // | Agua unknown y la lluvia no cubre el mínimo                      | partial: plan incompleto (dato faltante)|
 // | Agua limited y la lluvia no cubre el mínimo, resto respondido    | plan conditional: no cuenta como falta  |
 // | Ningún Plan B posible (ni cultivo, ni descanso)                  | partial: B incompleto sin cultivo       |
@@ -61,7 +63,7 @@ import { alternativeFor, REFERENCE, type Alternative } from './scenarios.ts';
 // ya conoce (riego) = conditional, nunca partial.
 
 /** Cambia si cambian las reglas o la lógica. */
-export const ENGINE_VERSION = '0.2.0';
+export const ENGINE_VERSION = '0.3.0';
 export type EngineResult = Pick<AnalysisResult, 'status' | 'engineVersion' | 'planA' | 'planB' | 'missing'>;
 
 /** Mínimo de días válidos. Mismo criterio de 80 % que usa la ingesta de Giovanni para un mes válido. */
@@ -199,6 +201,11 @@ export function evaluateRotation(input: FarmInput, climate: ClimateEvidence): En
   const waterMin = rule('water_minimum');
   // Cultivo actual o último cosechado: la regla los trata igual. Sin cultivo reconocido no se asume nada.
   const previous = input.crop.status === 'known' ? findCrop(input.crop.name) : null;
+  // Sin ficha propia pero de un grupo conocido (hortaliza, tubérculo, perenne): solo rige la regla general por familia
+  const family: GeneralGroup | null = input.crop.status === 'known' && !previous ? findGeneralGroup(input.crop.name) : null;
+  const previousGroup = previous?.group ?? family?.id ?? null;
+  // Tras cereal conviene leguminosa y viceversa; tras cualquier otra familia, leguminosa
+  const alternatesWith = (group: Crop['group']) => (previousGroup === 'legume' ? group === 'cereal' : previousGroup === 'cereal' ? group === 'legume' : group === 'legume');
 
   // 4. Candidatos
   const candidates: Candidate[] = [];
@@ -228,7 +235,7 @@ export function evaluateRotation(input: FarmInput, climate: ClimateEvidence): En
       optimal: within(tempC, crop.temperature.optimal),
       rainExcess: max !== null && rainMm > max,
       rainCovers: min !== null && rainMm >= min && !(max !== null && rainMm > max),
-      alternates: !!legumeCereal && !!previous && previous.group !== crop.group,
+      alternates: !!legumeCereal && !!previousGroup && alternatesWith(crop.group),
       season: windows.length === 0 ? 'none' : fits.length ? 'in' : 'out',
       seasons: (fits.length ? fits : windows).map((w) => w.label).join('; ').slice(0, 120),
     });
@@ -276,7 +283,11 @@ export function evaluateRotation(input: FarmInput, climate: ClimateEvidence): En
     const toVerify: Finding[] = [];
 
     // Rotación
-    if (!previous) {
+    if (family) {
+      // Regla general por familia: se declara como tal, no como dato de una ficha
+      if (legumeCereal && c.alternates) reasons.push(fact('reason.legume_after_family', legumeCereal.id, [], { crop: id, family: family.id }));
+      toVerify.push(fact('verify.previous_crop_family_rule', ENGINE.rotation, [], { family: family.id }));
+    } else if (!previous) {
       const which = input.crop.status === 'unknown' ? 'verify.previous_crop_unknown' : 'verify.previous_crop_not_in_catalog';
       toVerify.push(fact(which, ENGINE.rotation, []));
     } else {
@@ -344,7 +355,7 @@ export function evaluateRotation(input: FarmInput, climate: ClimateEvidence): En
     toVerify.push(fact('verify.variety_cycle', ENGINE.cycle, [], { crop: id, days: c.days }));
     if (within(0, crop.ph.absolute) !== null) toVerify.push(fact('verify.soil_ph', ENGINE.soil, [], { crop: id, ...crop.ph.absolute }));
 
-    const answered = !!previous && reasons.length > 0 && !c.rainExcess;
+    const answered = !!previousGroup && reasons.length > 0 && !c.rainExcess;
     const completeness: Plan['completeness'] = !answered
       ? 'incomplete'
       : !unbacked(c, water)
