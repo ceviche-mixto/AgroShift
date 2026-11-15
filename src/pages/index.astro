@@ -1,3 +1,14 @@
 ---
+import BaseLayout from '../layouts/BaseLayout.astro';
 ---
-<html lang="es"><head><meta charset="utf-8" /><title>AgroShift</title></head><body><h1>AgroShift</h1></body></html>
+<BaseLayout title="AgroShift" description="AgroShift: gestión de turnos agrícolas.">
+  <h1 class="text-3xl font-bold leading-tight">AgroShift</h1>
+  <p class="mt-4">
+    Bienvenido a AgroShift. Aquí podrá registrar y consultar los turnos de trabajo del campo de forma sencilla.
+  </p>
+  <section class="aviso mt-6" aria-labelledby="proximamente">
+    <h2 id="proximamente" class="text-xl font-bold">Próximamente</h2>
+    <p class="mt-2">El formulario de registro llegará en la Fase 3.</p>
+  </section>
+  <p class="mt-6"><a class="boton" href="#proximamente">Ver aviso</a></p>
+</BaseLayout>

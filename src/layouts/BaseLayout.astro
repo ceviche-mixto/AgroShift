@@ -1,0 +1,30 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+const { title, description = 'AgroShift: gestión de turnos agrícolas.' } = Astro.props;
+---
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <title>{title}</title>
+  </head>
+  <body>
+    <a class="saltar" href="#contenido">Saltar al contenido</a>
+    <header class="mx-auto max-w-3xl px-4 pt-6">
+      <p class="font-bold">AgroShift</p>
+    </header>
+    <main id="contenido" tabindex="-1" class="mx-auto max-w-3xl px-4 py-6">
+      <slot />
+    </main>
+    <footer class="mx-auto max-w-3xl px-4 pb-8 text-[var(--color-texto-suave)]">
+      <p>&copy; AgroShift</p>
+    </footer>
+  </body>
+</html>
