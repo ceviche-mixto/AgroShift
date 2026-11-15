@@ -12,6 +12,21 @@
   --color-borde: #6e5a3c;        /* tierra: bordes de componentes, >=3:1 */
   --color-foco: #8a3b00;         /* anillo de foco, >=3:1 sobre fondo y superficie */
   --tamano-tactil: 3rem;         /* 48 px */
+
+  /* Opciones (botones de respuesta rápida): hover, activo, elegida y deshabilitada. */
+  --opcion-hover-fondo: #ede6cf;
+  --opcion-activo-fondo: #ddd3b4;
+  --opcion-elegida-activo-fondo: #173d13;
+  --opcion-off-fondo: #e9e6dc;
+  --opcion-off-texto: #55604f;
+  --opcion-off-borde: #7a7a6a;
+
+  /* Estados: texto siempre --color-texto; el tono solo acompaña a símbolo, etiqueta y borde. */
+  --info-fondo: #e8eff7;   --info-borde: #1d4f91;
+  --aviso-fondo: #fff4d6;  --aviso-borde: #8a5a00;
+  --alerta-fondo: #fbe9e7; --alerta-borde: #a3231a;
+  --exito-fondo: #e6f2e3;  --exito-borde: #2d5a27;
+  --sindato-fondo: #ececec; --sindato-borde: #5c5c5c;
 }
 
 html {
@@ -75,8 +90,110 @@ body {
   border-radius: 0.5rem;
 }
 
+/* Estado: <div class="estado estado--{tono}" role="status"> con
+   <p class="estado__etiqueta"><span class="estado__simbolo" aria-hidden="true">símbolo</span> etiqueta</p>,
+   título, explicación y, si aplica, <p class="estado__paso">. Se distingue por símbolo + etiqueta + borde. */
+.estado {
+  padding: 1rem;
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  border: 2px solid var(--color-borde);
+  border-radius: 0.5rem;
+}
+.estado > * { margin: 0; }
+.estado > * + * { margin-top: 0.5rem; }
+.estado__etiqueta { display: flex; align-items: center; gap: 0.5rem; font-weight: 700; }
+.estado__simbolo { min-width: 1.5rem; text-align: center; font-size: 1.25rem; line-height: 1; }
+.estado__titulo { font-size: 1.25rem; font-weight: 700; }
+.estado__paso { font-weight: 700; }
+.estado__paso::before { content: "\2192\00a0"; } /* → Qué hacer */
+
+.estado--info { background: var(--info-fondo); border: 2px solid var(--info-borde); }
+.estado--info .estado__simbolo { color: var(--info-borde); }
+.estado--exito { background: var(--exito-fondo); border: 5px solid var(--exito-borde); }
+.estado--exito .estado__simbolo { color: var(--exito-borde); }
+.estado--aviso { background: var(--aviso-fondo); border: 3px dashed var(--aviso-borde); }
+.estado--aviso .estado__simbolo { color: var(--aviso-borde); }
+.estado--alerta { background: var(--alerta-fondo); border: 6px double var(--alerta-borde); }
+.estado--alerta .estado__simbolo { color: var(--alerta-borde); }
+.estado--sindato { background: var(--sindato-fondo); border: 3px dotted var(--sindato-borde); }
+.estado--sindato .estado__simbolo { color: var(--sindato-borde); }
+
+/* Espera: anillo girando + texto visible. Con movimiento reducido queda quieto. */
+.espera { display: flex; align-items: center; gap: 0.75rem; min-height: var(--tamano-tactil); }
+.espera__giro {
+  flex: none;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 4px solid var(--color-primario);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: giro 1s linear infinite;
+}
+@keyframes giro { to { transform: rotate(360deg); } }
+
+/* Opción de respuesta rápida: <button class="opcion" aria-pressed="true|false"> (o aria-checked). */
+.opcion {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-width: var(--tamano-tactil);
+  min-height: var(--tamano-tactil);
+  padding: 0.5rem 1.25rem;
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  border: 2px solid var(--color-borde);
+  border-radius: 0.5rem;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.opcion:hover { background: var(--opcion-hover-fondo); }
+.opcion:active { background: var(--opcion-activo-fondo); }
+.opcion[aria-pressed="true"],
+.opcion[aria-checked="true"] {
+  background: var(--color-primario);
+  color: var(--color-primario-texto);
+  border-color: var(--color-primario);
+  box-shadow: inset 0 0 0 2px var(--color-primario-texto);
+}
+.opcion[aria-pressed="true"]::before,
+.opcion[aria-checked="true"]::before {
+  content: "\2714\FE0E";
+  content: "\2714\FE0E" / "";
+}
+.opcion[aria-pressed="true"]:hover,
+.opcion[aria-checked="true"]:hover { background: var(--color-primario-hover); }
+.opcion[aria-pressed="true"]:active,
+.opcion[aria-checked="true"]:active { background: var(--opcion-elegida-activo-fondo); }
+.opcion:disabled,
+.opcion[aria-disabled="true"] {
+  background: var(--opcion-off-fondo);
+  color: var(--opcion-off-texto);
+  border: 2px dashed var(--opcion-off-borde);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+/* Alto contraste forzado: colores del sistema; el borde y el símbolo siguen distinguiendo. */
+@media (forced-colors: active) {
+  :focus-visible { outline-color: Highlight; }
+  .estado, .opcion { border-color: CanvasText; }
+  .estado__simbolo { color: CanvasText; }
+  .espera__giro { border-color: CanvasText; border-top-color: transparent; }
+  .opcion[aria-pressed="true"], .opcion[aria-checked="true"] {
+    background: Highlight;
+    color: HighlightText;
+    border-color: Highlight;
+    box-shadow: inset 0 0 0 2px HighlightText;
+  }
+  .opcion:disabled, .opcion[aria-disabled="true"] { color: GrayText; border-color: GrayText; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
+  .espera__giro { animation: none; }
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
