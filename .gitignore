@@ -1,0 +1,20 @@
+# Secretos
+.env
+.env.*
+!.env.example
+
+# Dependencias y salidas de build
+node_modules/
+dist/
+.astro/
+.vercel/
+*.log
+.DS_Store
+
+# Herramientas locales
+graphify-out/
+.claude/settings.local.json
+
+# Planificación privada
+PLAN.md
+CONTEXTO_AGROSHIFT.md
