@@ -8,14 +8,15 @@ import { addDays, cellGldas, coverageOf, daysInMonth } from './grid.ts';
 // Giovanni in Cloud (NASA GES DISC) `GET /timeseries`, serie GLDAS Noah 0.25° 3-hourly v2.1.
 // En la ruta web NO se llama al servicio: la ingesta (scripts/ingest-giovanni.ts) agrega por mes,
 // calcula anomalía y tendencia y deja el resultado en Supabase. Aquí viven el cliente, el
-// análisis del CSV y los cálculos. El formato del CSV sigue el tutorial oficial de GES DISC
-// (bloque `clave,valor`, luego `Timestamp,<variable>`); no se pudo contrastar contra una respuesta
-// real. Autenticación (probado 2026-11-15): el servicio lee la cabecera `authorizationtoken`, no
+// análisis del CSV y los cálculos. Formato real del CSV (verificado 2026-11-15): bloque `clave,valor`
+// (prod_name, doi, unit, undef, lat, lon, resolución…), línea en blanco y `Timestamp (UTC),Data` con
+// instantes `YYYY-MM-DD hh:mm`. Autenticación (probado 2026-11-15): el servicio lee la cabecera `authorizationtoken`, no
 // `Authorization: Bearer` (que da 500). Rechazó el token de Earthdata Login con 401: exige el token
-// de su propio `GET /signin` con usuario y contraseña de Earthdata, como en el tutorial.
+// de su propio `GET /signin` (OAuth con usuario y contraseña de Earthdata), como en el tutorial.
 
 const ENDPOINT = 'https://api.giovanni.earthdata.nasa.gov/timeseries';
 const SIGNIN = 'https://api.giovanni.earthdata.nasa.gov/signin';
+const URS_HOST = 'urs.earthdata.nasa.gov';
 export const GIOVANNI_VARIABLE = 'GLDAS_NOAH025_3H_2_1_Tair_f_inst';
 export const GIOVANNI_METHOD_VERSION = 'gic-monthly-v1';
 /** Agregados cerrados: 30 días de vigencia y hasta 180 días como instantánea previa. */
@@ -51,20 +52,42 @@ export interface GiovanniOptions extends Pick<FetchOptions, 'fetch' | 'signal' |
 }
 
 /**
- * Token de sesión de Giovanni. Con EARTHDATA_USERNAME y EARTHDATA_PASSWORD usa `GET /signin`
- * (sin verificar: faltan credenciales). Si no, prueba EARTHDATA_TOKEN.
+ * Token de sesión de Giovanni. `GET /signin` redirige por OAuth a Earthdata Login y vuelve a
+ * `/gettoken`. Las credenciales se envían solo al host de Earthdata Login. La cuenta debe haber
+ * autorizado antes la aplicación Giovanni en su perfil de Earthdata.
  */
 export async function giovanniToken(opts: GiovanniOptions = {}): Promise<string> {
   const user = serverEnv('EARTHDATA_USERNAME');
   const pass = serverEnv('EARTHDATA_PASSWORD');
-  if (user && pass) {
-    const basic = Buffer.from(`${user}:${pass}`).toString('base64');
-    const body = await fetchText(SIGNIN, { ...opts, headers: { Authorization: `Basic ${basic}` }, secrets: [user, pass, basic] });
-    return body.trim().replace(/"/g, '');
+  if (!user || !pass) throw new Error('Faltan EARTHDATA_USERNAME y EARTHDATA_PASSWORD (Giovanni /signin)');
+  const basic = `Basic ${Buffer.from(`${user}:${pass}`).toString('base64')}`;
+  let url = SIGNIN;
+  for (let hop = 0; hop < 5; hop++) {
+    const headers: Record<string, string> = new URL(url).host === URS_HOST ? { Authorization: basic } : {};
+    const res = await (opts.fetch ?? fetch)(url, { redirect: 'manual', signal: opts.signal, headers });
+    const location = res.headers.get('location');
+    if (!location) {
+      // Respuesta real (2026-11-15): JSON `{ expires_in, token }`. El tutorial muestra un texto entre comillas.
+      const body = (await res.text()).trim();
+      let token: unknown = body;
+      try {
+        const json: unknown = JSON.parse(body);
+        token = typeof json === 'string' ? json : (json as { token?: unknown } | null)?.token;
+      } catch {}
+      if (!res.ok || typeof token !== 'string' || !/^[^\s<>{}]{20,}$/.test(token)) {
+        throw new Error(`Giovanni /signin: HTTP ${res.status} sin token`);
+      }
+      return token;
+    }
+    const next = new URL(location, url);
+    const denied = next.searchParams.get('error');
+    if (denied) {
+      const why = (next.searchParams.get('error_msg') ?? denied).split(user).join('').slice(0, 160);
+      throw new Error(`Earthdata Login: ${why}`);
+    }
+    url = next.href;
   }
-  const token = serverEnv('EARTHDATA_TOKEN');
-  if (!token) throw new Error('Faltan EARTHDATA_USERNAME y EARTHDATA_PASSWORD, o EARTHDATA_TOKEN');
-  return token;
+  throw new Error('Giovanni /signin: demasiadas redirecciones');
 }
 
 /** Descarga una ventana acotada (UTC) para el centro de la celda. Solo para ingesta. */
@@ -80,7 +103,7 @@ export async function fetchGiovanniWindow(lat: number, lon: number, start: Local
 }
 
 export interface Reading {
-  /** Instante UTC `YYYY-MM-DD hh:mm:ss`. */
+  /** Instante UTC `YYYY-MM-DD hh:mm`. */
   t: string;
   /** Grados Celsius, o `null` si falta o es inválido. */
   v: number | null;
@@ -89,7 +112,7 @@ export interface Reading {
 /** Analiza el CSV de Giovanni y convierte kelvin a Celsius. Lanza si la unidad no es K o C. */
 export function parseGiovanniCsv(text: string): Reading[] {
   const lines = text.trim().split(/\r?\n/);
-  const iHead = lines.findIndex((l) => /^timestamp,/i.test(l));
+  const iHead = lines.findIndex((l) => /^timestamp[^,]*,/i.test(l));
   if (iHead < 0) throw new Error('CSV de Giovanni vacío o inválido');
   const meta = Object.fromEntries(
     lines.slice(0, iHead).map((l) => [l.slice(0, l.indexOf(',')).trim(), l.slice(l.indexOf(',') + 1).trim()]),

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   fetchGiovanniWindow,
+  giovanniToken,
   monthlyMeans,
   normalizeGiovanni,
   parseGiovanniCsv,
@@ -12,11 +13,14 @@ import {
 const KELVIN = 273.15;
 const csv = (unit: string, rows: [string, string][]) =>
   [
+    'prod_name,GLDAS_NOAH025_3H.2.1',
     'param_name,Near surface air temperature',
     `unit,${unit}`,
+    'undef,-9999',
     'lat,-6.875',
     'lon,-79.875',
-    'Timestamp,Near surface air temperature',
+    '',
+    'Timestamp (UTC),Data',
     ...rows.map(([t, v]) => `${t},${v}`),
   ].join('\n');
 
@@ -124,6 +128,46 @@ describe('fetchGiovanniWindow', () => {
       await expect(fetchGiovanniWindow(0, 0, '2025-01-01', '2025-01-02')).rejects.toThrow('Faltan EARTHDATA_USERNAME');
     } finally {
       if (saved !== undefined) process.env.EARTHDATA_TOKEN = saved;
+    }
+  });
+});
+
+describe('giovanniToken', () => {
+  it('sigue el OAuth de /signin, envía las credenciales solo a Earthdata Login y no las filtra', async () => {
+    const saved = { u: process.env.EARTHDATA_USERNAME, p: process.env.EARTHDATA_PASSWORD };
+    process.env.EARTHDATA_USERNAME = 'ana';
+    process.env.EARTHDATA_PASSWORD = 'clave';
+    const redirect = (to: string) => new Response(null, { status: 302, headers: { location: to } });
+    try {
+      const f = vi
+        .fn()
+        .mockResolvedValueOnce(redirect('https://urs.earthdata.nasa.gov/oauth/authorize?client_id=x'))
+        .mockResolvedValueOnce(redirect('https://api.giovanni.earthdata.nasa.gov/gettoken?code=abc'))
+        .mockResolvedValueOnce(new Response('"TOKEN-DE-SESION-GIOVANNI-0001"'));
+      expect(await giovanniToken({ fetch: f })).toBe('TOKEN-DE-SESION-GIOVANNI-0001');
+      const sent = f.mock.calls.map(([url, init]) => [new URL(url as string).host, 'Authorization' in (init as { headers: object }).headers]);
+      expect(sent).toEqual([
+        ['api.giovanni.earthdata.nasa.gov', false],
+        ['urs.earthdata.nasa.gov', true],
+        ['api.giovanni.earthdata.nasa.gov', false],
+      ]);
+
+      const denied = vi
+        .fn()
+        .mockResolvedValueOnce(redirect('https://urs.earthdata.nasa.gov/oauth/authorize'))
+        .mockResolvedValueOnce(redirect('https://api.giovanni.earthdata.nasa.gov/gettoken?error=access_denied&error_msg=Pre+authorization+required+ana'));
+      const err = (await giovanniToken({ fetch: denied }).catch((e: Error) => e)) as Error;
+      expect(err.message).toContain('Pre authorization required');
+      expect(err.message).not.toMatch(/ana|clave/);
+
+      // Una página de inicio de sesión no es un token
+      const html = vi.fn().mockResolvedValue(new Response('<html>login</html>'));
+      await expect(giovanniToken({ fetch: html })).rejects.toThrow('sin token');
+    } finally {
+      for (const [k, v] of [['EARTHDATA_USERNAME', saved.u], ['EARTHDATA_PASSWORD', saved.p]] as const) {
+        if (v === undefined) delete process.env[k];
+        else process.env[k] = v;
+      }
     }
   });
 });
