@@ -432,12 +432,33 @@ export const COORDENADAS_MANUAL = 'Enter coordinates manually';
 
 export const PIE = {
   nombre: 'AgroShift',
-  fuentes: 'Scientific sources & AI tools',
-  repo: 'Open Source (Apache 2.0) on GitHub',
   navegacion: 'More about AgroShift',
-  aviso: 'Decision-support powered by NASA Earth observations — built to complement field inspection and local agronomic expertise.',
-  evento: 'NASA Space Apps Challenge Chiclayo 2026',
-  equipo: 'Team OneCtrl: Giancarlo Luciano Larios Infantes, Enzo Gabriel García Infantes & Sergio Anibal Tuesta Rodas',
+  estado: 'System operational',
+  origen: 'Source: NASA Earth Observations',
+  licencia: 'Apache-2.0',
+  aviso: 'Decision support based on NASA observations, built to complement field inspection and local agronomic expertise.',
+  pasosEtiqueta: 'How AgroShift works',
+  pasos: [
+    { titulo: 'Observation', detalle: 'NASA Data' },
+    { titulo: 'Analysis', detalle: 'FAO + NASA Rules' },
+    { titulo: 'Decision', detalle: 'Field-validated' },
+  ],
+  recursos: 'Transparency & resources',
+  fuentes: { titulo: 'Scientific sources & AI tools', detalle: 'Data, methods and models used' },
+  repo: { titulo: 'Open source on GitHub', detalle: 'Public project repository' },
+  apache: { titulo: 'Apache 2.0 license', detalle: 'Use, copy and modification allowed' },
+  evento: 'NASA Space Apps 2026',
+  eventoTitulo: 'NASA Space Apps Challenge',
+  eventoLugar: 'Chiclayo 2026',
+  equipoEtiqueta: 'Team',
+  equipoNombre: 'OneCtrl',
+  equipo: [
+    { iniciales: 'GL', nombre: 'Giancarlo Luciano Larios Infantes' },
+    { iniciales: 'EG', nombre: 'Enzo Gabriel García Infantes' },
+    { iniciales: 'ST', nombre: 'Sergio Anibal Tuesta Rodas' },
+  ],
+  descargo: 'AgroShift recommendations are indicative and do not replace the judgment of a professional agronomist or field verification.',
+  derechos: '© 2026 AgroShift',
 } as const;
 
 /** Header: brand link and the "how it works" dialog. */

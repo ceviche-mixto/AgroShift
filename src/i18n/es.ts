@@ -432,12 +432,33 @@ export const COORDENADAS_MANUAL = 'Ingresar coordenadas manualmente';
 
 export const PIE = {
   nombre: 'AgroShift',
-  fuentes: 'Fuentes científicas y herramientas de IA',
-  repo: 'Código abierto (Apache 2.0) en GitHub',
   navegacion: 'Más sobre AgroShift',
-  aviso: 'Soporte de decisión impulsado por observaciones de la Tierra de la NASA — diseñado para complementar la revisión en campo y el criterio agronómico.',
-  evento: 'NASA Space Apps Challenge Chiclayo 2026',
-  equipo: 'Equipo OneCtrl: Giancarlo Luciano Larios Infantes, Enzo Gabriel García Infantes y Sergio Anibal Tuesta Rodas',
+  estado: 'Sistema operativo',
+  origen: 'Fuente: NASA Earth Observations',
+  licencia: 'Apache-2.0',
+  aviso: 'Soporte a la decisión basado en observaciones de la NASA, diseñado para complementar la inspección en campo y la experiencia agronómica local.',
+  pasosEtiqueta: 'Cómo funciona AgroShift',
+  pasos: [
+    { titulo: 'Observación', detalle: 'Datos NASA' },
+    { titulo: 'Análisis', detalle: 'Reglas FAO + NASA' },
+    { titulo: 'Decisión', detalle: 'Validada en campo' },
+  ],
+  recursos: 'Transparencia y recursos',
+  fuentes: { titulo: 'Fuentes científicas y herramientas de IA', detalle: 'Datos, métodos y modelos usados' },
+  repo: { titulo: 'Código abierto en GitHub', detalle: 'Repositorio público del proyecto' },
+  apache: { titulo: 'Licencia Apache 2.0', detalle: 'Uso, copia y modificación permitidos' },
+  evento: 'NASA Space Apps 2026',
+  eventoTitulo: 'NASA Space Apps Challenge',
+  eventoLugar: 'Chiclayo 2026',
+  equipoEtiqueta: 'Equipo',
+  equipoNombre: 'OneCtrl',
+  equipo: [
+    { iniciales: 'GL', nombre: 'Giancarlo Luciano Larios Infantes' },
+    { iniciales: 'EG', nombre: 'Enzo Gabriel García Infantes' },
+    { iniciales: 'ST', nombre: 'Sergio Anibal Tuesta Rodas' },
+  ],
+  descargo: 'Las recomendaciones de AgroShift son orientativas y no reemplazan el criterio de un profesional agrónomo ni la verificación en campo.',
+  derechos: '© 2026 AgroShift',
 } as const;
 
 /** Cabecera: enlace de la marca y diálogo «cómo funciona». */

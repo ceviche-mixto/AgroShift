@@ -48,11 +48,19 @@ describe('espejo en.ts / es.ts', () => {
 
   it('el pie lleva el equipo completo en ambos idiomas', () => {
     for (const nombre of ['Giancarlo Luciano Larios Infantes', 'Enzo Gabriel García Infantes', 'Sergio Anibal Tuesta Rodas']) {
-      expect(es.PIE.equipo).toContain(nombre);
-      expect(en.PIE.equipo).toContain(nombre);
+      expect(es.PIE.equipo.map((m) => m.nombre)).toContain(nombre);
+      expect(en.PIE.equipo.map((m) => m.nombre)).toContain(nombre);
     }
-    expect(es.PIE.equipo.startsWith('Equipo OneCtrl:')).toBe(true);
-    expect(en.PIE.equipo.startsWith('Team OneCtrl:')).toBe(true);
+    expect(es.PIE.equipo.map((m) => m.iniciales)).toEqual(['GL', 'EG', 'ST']);
+    expect(en.PIE.equipo.map((m) => m.iniciales)).toEqual(['GL', 'EG', 'ST']);
+    expect([es.PIE.equipoEtiqueta, es.PIE.equipoNombre]).toEqual(['Equipo', 'OneCtrl']);
+    expect([en.PIE.equipoEtiqueta, en.PIE.equipoNombre]).toEqual(['Team', 'OneCtrl']);
+  });
+
+  it('el pie mantiene los tres pasos científicos en ambos idiomas', () => {
+    const f = (d: { PIE: { pasos: readonly { titulo: string; detalle: string }[] } }) => d.PIE.pasos.map((p) => `${p.titulo}|${p.detalle}`);
+    expect(f(es)).toEqual(['Observación|Datos NASA', 'Análisis|Reglas FAO + NASA', 'Decisión|Validada en campo']);
+    expect(f(en)).toEqual(['Observation|NASA Data', 'Analysis|FAO + NASA Rules', 'Decision|Field-validated']);
   });
 
   it('el selector de idioma anuncia su código visible', () => {

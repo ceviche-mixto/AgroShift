@@ -461,7 +461,7 @@ test.describe('red lenta y sin conexión', () => {
     await page.goto('/es/offline/');
     await expect(page.getByRole('heading').first()).toBeVisible();
     await expect(page.getByRole('link', { name: /./ }).first()).toBeVisible();
-    await expect(page.getByRole('contentinfo')).toContainText('NASA Space Apps Challenge Chiclayo 2026');
+    await expect(page.getByRole('contentinfo')).toContainText('NASA Space Apps Challenge');
   });
 });
 
@@ -470,9 +470,12 @@ test.describe('pie de página y fuentes', () => {
     await page.goto('/es/');
     const footer = page.getByRole('contentinfo');
     await expect(footer).toContainText('AgroShift');
-    await expect(footer).toContainText('Soporte de decisión');
-    await expect(footer).toContainText('NASA Space Apps Challenge Chiclayo 2026');
-    await expect(footer).toContainText('Equipo OneCtrl: Giancarlo Luciano Larios Infantes, Enzo Gabriel García Infantes y Sergio Anibal Tuesta Rodas');
+    await expect(footer).toContainText('Soporte a la decisión');
+    await expect(footer).toContainText('NASA Space Apps Challenge');
+    await expect(footer).toContainText('Chiclayo 2026');
+    await expect(footer).toContainText('Equipo OneCtrl');
+    for (const n of ['Giancarlo Luciano Larios Infantes', 'Enzo Gabriel García Infantes', 'Sergio Anibal Tuesta Rodas']) await expect(footer).toContainText(n);
+    await expect(footer).toContainText('Validada en campo');
     await footer.getByRole('link', { name: 'Fuentes científicas y herramientas' }).click();
     await expect(page).toHaveURL(/\/fuentes\/?$/);
     await expect(page.getByRole('heading', { level: 1, name: 'Fuentes científicas y herramientas' })).toBeVisible();
@@ -572,7 +575,9 @@ test.describe('idioma: inglés por defecto y selector EN | ES', () => {
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Plan your next planting');
     await expect(page.locator('[data-ff="step-count"]')).toHaveText('Step 1 of 5');
-    await expect(page.getByRole('contentinfo')).toContainText('Team OneCtrl: Giancarlo Luciano Larios Infantes, Enzo Gabriel García Infantes & Sergio Anibal Tuesta Rodas');
+    await expect(page.getByRole('contentinfo')).toContainText('Team OneCtrl');
+    await expect(page.getByRole('contentinfo')).toContainText('Sergio Anibal Tuesta Rodas');
+    await expect(page.getByRole('contentinfo')).toContainText('Field-validated');
 
     // Dos selectores (cabecera y pie), con el idioma activo marcado y tamaño táctil de 48 px
     const switches = page.getByRole('navigation', { name: 'Language' });

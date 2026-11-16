@@ -467,17 +467,50 @@ body {
 .ayuda__ok { width: 100%; cursor: pointer; }
 
 .pie { margin-top: 3rem; background: var(--marca-fondo); color: var(--marca-texto); }
-.pie p { margin: 0; }
-.pie__contenido { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2rem; max-width: 64rem; margin: 0 auto; padding: 2rem 1rem 2.5rem; }
-@media (min-width: 48rem) { .pie__contenido { grid-template-columns: repeat(12, minmax(0, 1fr)); align-items: start; } .pie__marca { grid-column: span 5; } .pie__nav { grid-column: span 3; } .pie__evento { grid-column: span 4; } }
-.pie__marca { display: grid; gap: 0.75rem; justify-items: start; min-width: 0; }
+:where(.pie) :where(p, ul, ol) { margin: 0; padding: 0; list-style: none; }
+.pie__estado { border-bottom: 1px solid var(--marca-borde); }
+.pie__estado-in { display: flex; align-items: center; flex-wrap: wrap; gap: 0.25rem 1.5rem; max-width: 64rem; margin: 0 auto; padding: 0.875rem 1rem; font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace; font-size: 0.875rem; }
+.pie__estado-ok { display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 700; }
+.pie__punto { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--marca-lima); }
+.pie__estado-txt { color: var(--marca-suave); }
+.pie__estado-lic { margin-left: auto; color: var(--marca-suave); }
+.pie__contenido { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2rem; max-width: 64rem; margin: 0 auto; padding: 2rem 1rem; }
+@media (min-width: 48rem) { .pie__contenido { grid-template-columns: repeat(12, minmax(0, 1fr)); align-items: start; } .pie__marca { grid-column: span 4; } .pie__nav { grid-column: span 4; } .pie__evento { grid-column: span 4; } }
+.pie__marca { display: grid; gap: 1rem; justify-items: start; min-width: 0; }
 .pie__aviso { max-width: 28rem; color: var(--marca-suave); }
-.pie__nav { display: grid; gap: 0.25rem; justify-items: start; min-width: 0; }
-.pie__nav .enlace { display: inline-flex; align-items: center; min-height: var(--tamano-tactil); }
-.pie__nav .idioma { margin-top: 0.5rem; }
-.pie__evento { display: grid; gap: 0.5rem; padding: 1rem; background: var(--marca-panel); border: 2px solid var(--marca-borde); border-radius: 0.75rem; min-width: 0; }
-.pie__evento-titulo { font-weight: 700; color: var(--marca-lima); }
-.pie__equipo { color: var(--marca-texto); font-size: 1rem; }
+.pie__pasos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem; width: 100%; }
+.pie__paso { position: relative; display: grid; gap: 0.25rem; align-content: start; min-width: 0; padding: 0.625rem 0.75rem; background: var(--marca-panel); border: 1px solid var(--marca-borde); border-radius: 0.5rem; font-size: 0.8125rem; }
+.pie__paso strong { font-size: 0.875rem; }
+.pie__paso span { color: var(--marca-suave); font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace; font-size: 0.75rem; }
+.pie__paso:not(.pie__paso--final)::after { content: '→'; position: absolute; top: 50%; right: -1.125rem; transform: translateY(-50%); color: var(--marca-borde); }
+@media (max-width: 30rem) { .pie__pasos { grid-template-columns: minmax(0, 1fr); gap: 0.5rem; } .pie__paso::after { display: none; } }
+.pie__paso--final { border-color: var(--marca-lima); }
+.pie__paso--final strong { color: var(--marca-lima); }
+.pie__nav { display: grid; gap: 0.5rem; min-width: 0; }
+.pie__titulo { font-size: 0.875rem; font-weight: 700; color: var(--marca-texto); }
+.pie__recursos li { border-bottom: 1px solid var(--marca-panel); }
+.pie__recurso { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: var(--tamano-tactil); padding: 0.75rem 0; color: var(--marca-texto); text-decoration: none; }
+.pie__recurso-txt { display: grid; gap: 0.125rem; }
+.pie__recurso-txt strong { font-weight: 500; }
+.pie__recurso-txt span { color: var(--marca-suave); font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace; font-size: 0.75rem; }
+.pie__flecha { flex: none; color: var(--marca-suave); }
+.pie__recurso:hover strong, .pie__recurso:hover .pie__flecha { color: var(--marca-lima); }
+.pie__evento { display: grid; gap: 0.5rem; justify-items: start; padding: 1.25rem; background: var(--marca-panel); border: 1px solid var(--marca-borde); border-radius: 1rem; min-width: 0; }
+.pie__insignia { padding: 0.125rem 0.625rem; background: var(--marca-lima); color: var(--marca-fondo); border-radius: 0.375rem; font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace; font-size: 0.75rem; font-weight: 700; }
+.pie__evento-titulo { font-size: 1.125rem; font-weight: 700; color: var(--marca-lima); }
+.pie__evento-lugar { width: 100%; padding-bottom: 0.75rem; border-bottom: 1px dashed var(--marca-borde); color: var(--marca-suave); font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace; font-size: 0.875rem; }
+.pie__equipo-etiqueta { font-size: 0.875rem; color: var(--marca-suave); }
+.pie__equipo-etiqueta strong { color: var(--marca-texto); }
+.pie__equipo { display: grid; gap: 0.5rem; }
+.pie__equipo li { display: flex; align-items: center; gap: 0.75rem; }
+.pie__iniciales { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 1.75rem; height: 1.75rem; border: 1px solid var(--marca-borde); border-radius: 50%; color: var(--marca-lima); font-size: 0.6875rem; font-weight: 700; }
+.pie__base { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem 1.5rem; max-width: 64rem; margin: 0 auto; padding: 1.25rem 1rem 2rem; border-top: 1px solid var(--marca-panel); }
+.pie__descargo { max-width: 34rem; color: var(--marca-suave); font-size: 0.875rem; }
+.pie__derechos { white-space: nowrap; }
+/* Selector EN | ES del pie: píldora segmentada. */
+.pie .idioma { gap: 0; padding: 0.25rem; border: 1px solid var(--marca-borde); border-radius: 0.625rem; }
+.pie .idioma .opcion { border-color: transparent; border-radius: 0.375rem; }
+@media (forced-colors: active) { .pie__paso, .pie__evento, .pie__iniciales { border-color: CanvasText; } }
 
 /* Barra de progreso del quiz: brote que avanza con el paso + transiciones suaves en controles. */
 .progreso-pista { position: relative; margin: 0.5rem 0.75rem 0.5rem 0; }

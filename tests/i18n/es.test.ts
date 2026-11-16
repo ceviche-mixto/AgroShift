@@ -142,8 +142,8 @@ describe('textos', () => {
 describe('pasos, pie y fuentes', () => {
   it('conteo de pasos y pie institucional', () => {
     expect(PASOS.conteo(2, 5)).toBe('Paso 2 de 5');
-    expect(PIE.evento).toBe('NASA Space Apps Challenge Chiclayo 2026');
-    expect(PIE.aviso).toContain('criterio agronómico');
+    expect(`${PIE.eventoTitulo} ${PIE.eventoLugar}`).toBe('NASA Space Apps Challenge Chiclayo 2026');
+    expect(PIE.descargo).toContain('criterio de un profesional agrónomo');
     expect(COORDENADAS_MANUAL).toBe('Ingresar coordenadas manualmente');
   });
 

@@ -10,21 +10,60 @@ interface Props {
 const { lang, path } = Astro.props;
 const { PIE } = dict(lang);
 const REPO = 'https://github.com/ceviche-mixto/AgroShift';
+const recursos = [
+  { ...PIE.fuentes, href: pathFor(lang, '/fuentes/'), externo: false },
+  { ...PIE.repo, href: REPO, externo: true },
+  { ...PIE.apache, href: `${REPO}/blob/main/LICENSE`, externo: true },
+];
 ---
 <footer class="pie">
+  <div class="pie__estado">
+    <p class="pie__estado-in">
+      <span class="pie__estado-ok"><span class="pie__punto" aria-hidden="true"></span>{PIE.estado}</span>
+      <span class="pie__estado-txt">{PIE.origen}</span>
+      <span class="pie__estado-lic">{PIE.licencia}</span>
+    </p>
+  </div>
   <div class="pie__contenido">
     <div class="pie__marca">
       <Logo size={40} />
       <p class="pie__aviso">{PIE.aviso}</p>
+      <ol class="pie__pasos" aria-label={PIE.pasosEtiqueta}>
+        {PIE.pasos.map((p, i) => (
+          <li class:list={['pie__paso', { 'pie__paso--final': i === PIE.pasos.length - 1 }]}>
+            <strong>{p.titulo}</strong>
+            <span>{p.detalle}</span>
+          </li>
+        ))}
+      </ol>
     </div>
     <nav class="pie__nav" aria-label={PIE.navegacion}>
-      <a class="enlace" href={pathFor(lang, '/fuentes/')}>{PIE.fuentes}</a>
-      <a class="enlace" href={REPO} target="_blank" rel="noopener noreferrer">{PIE.repo}</a>
-      <LangSwitch lang={lang} path={path} />
+      <p class="pie__titulo">{PIE.recursos}</p>
+      <ul class="pie__recursos">
+        {recursos.map((r) => (
+          <li>
+            <a class="pie__recurso" href={r.href} {...(r.externo ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
+              <span class="pie__recurso-txt"><strong>{r.titulo}</strong><span>{r.detalle}</span></span>
+              <span class="pie__flecha" aria-hidden="true">↗</span>
+            </a>
+          </li>
+        ))}
+      </ul>
     </nav>
     <div class="pie__evento">
-      <p class="pie__evento-titulo">{PIE.evento}</p>
-      <p class="pie__equipo" data-ff="team">{PIE.equipo}</p>
+      <p class="pie__insignia">{PIE.evento}</p>
+      <p class="pie__evento-titulo">{PIE.eventoTitulo}</p>
+      <p class="pie__evento-lugar">{PIE.eventoLugar}</p>
+      <p class="pie__equipo-etiqueta" data-ff="team">{PIE.equipoEtiqueta} <strong>{PIE.equipoNombre}</strong></p>
+      <ul class="pie__equipo">
+        {PIE.equipo.map((m) => (
+          <li><span class="pie__iniciales" aria-hidden="true">{m.iniciales}</span>{m.nombre}</li>
+        ))}
+      </ul>
     </div>
+  </div>
+  <div class="pie__base">
+    <p class="pie__descargo">{PIE.descargo} <span class="pie__derechos">{PIE.derechos}</span></p>
+    <LangSwitch lang={lang} path={path} />
   </div>
 </footer>
