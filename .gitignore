@@ -22,3 +22,26 @@ CONTEXTO_AGROSHIFT.md
 # Playwright
 test-results/
 playwright-report/
+
+# Agentes y asistentes locales
+.claude/
+.agents/
+.codex/
+AGENTS.md
+CLAUDE.md
+
+# Temporales y cachés locales
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+.cache/
+.eslintcache
+*.tsbuildinfo
+.vscode/
+.idea/
+Thumbs.db
+npm-debug.log*
+*.pem
+*.key
