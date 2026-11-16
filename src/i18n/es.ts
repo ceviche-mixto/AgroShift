@@ -435,7 +435,7 @@ export const PIE = {
   fuentes: 'Fuentes científicas y herramientas de IA',
   repo: 'Código abierto (Apache 2.0) en GitHub',
   navegacion: 'Más sobre AgroShift',
-  aviso: 'Uso orientativo: AgroShift no reemplaza la revisión en tu campo ni a un técnico agrónomo.',
+  aviso: 'Soporte de decisión impulsado por observaciones de la Tierra de la NASA — diseñado para complementar la revisión en campo y el criterio agronómico.',
   evento: 'NASA Space Apps Challenge Chiclayo 2026',
   equipo: 'Equipo OneCtrl: Giancarlo Luciano Larios Infantes, Enzo Gabriel García Infantes y Sergio Anibal Tuesta Rodas',
 } as const;
