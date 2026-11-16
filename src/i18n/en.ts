@@ -571,7 +571,11 @@ export const SITIO = {
 export const FORMULARIO_EXTRA = {
   diaSiembra: 'Planting day',
   mesSiembra: 'Planting month',
-  ayudaMes: 'If you do not see a calendar, type the year and month like this: 2027-06.',
+  mes: 'Month',
+  anio: 'Year',
+  elegirMes: 'Choose month',
+  elegirAnio: 'Choose year',
+  meses: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
   notaFinal: 'After the result you can add data about your soil and your previous crops.',
   eligeLocalidad: 'Choose your town',
 } as const;

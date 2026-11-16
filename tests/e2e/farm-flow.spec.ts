@@ -45,7 +45,8 @@ async function fillForm(page: Page, o: { coords?: { lat: string; lon: string }; 
   await page.getByRole('radio', { name: o.water ?? 'Tengo suficiente agua' }).check();
   await next(page);
   await page.getByRole('radio', { name: 'Sé solo el mes' }).check();
-  await page.getByLabel('Mes de siembra').fill('2027-06');
+  await page.getByLabel('Mes', { exact: true }).selectOption('06');
+  await page.getByLabel('Año', { exact: true }).selectOption('2027');
 }
 /** Desde «Cambiar mis respuestas» (paso 1, datos conservados) hasta el último paso. */
 const toLastStep = (page: Page) => next(page, 4);
@@ -469,7 +470,7 @@ test.describe('pie de página y fuentes', () => {
     await page.goto('/es/');
     const footer = page.getByRole('contentinfo');
     await expect(footer).toContainText('AgroShift');
-    await expect(footer).toContainText('no reemplaza');
+    await expect(footer).toContainText('Soporte de decisión');
     await expect(footer).toContainText('NASA Space Apps Challenge Chiclayo 2026');
     await expect(footer).toContainText('Equipo OneCtrl: Giancarlo Luciano Larios Infantes, Enzo Gabriel García Infantes y Sergio Anibal Tuesta Rodas');
     await footer.getByRole('link', { name: 'Fuentes científicas y herramientas' }).click();
@@ -617,7 +618,9 @@ test.describe('idioma: inglés por defecto y selector EN | ES', () => {
     await page.getByRole('radio', { name: 'I have enough water' }).check();
     await nextBtn();
     await page.getByRole('radio', { name: 'I only know the month' }).check();
-    await page.getByLabel('Planting month').fill('2027-06');
+    await expect(page.getByLabel('Month', { exact: true }).locator('option')).toContainText(['Choose month', 'January', 'June', 'December']);
+    await page.getByLabel('Month', { exact: true }).selectOption('06');
+    await page.getByLabel('Year', { exact: true }).selectOption('2027');
     await page.getByRole('button', { name: 'See my plan' }).click();
 
     await expect(page.getByRole('heading', { name: 'Your plan for this planting' })).toBeFocused();

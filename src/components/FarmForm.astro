@@ -7,6 +7,8 @@ import LocationField from './LocationField.astro';
 const { lang } = Astro.props as { lang: Lang };
 const { CAMPOS, PASOS, FORMULARIO_EXTRA, BOTON_ENVIAR } = dict(lang);
 const { ubicacion, cultivo, objetivo, agua, siembra } = CAMPOS;
+const anioActual = new Date().getFullYear();
+const anios = Array.from({ length: 6 }, (_, i) => anioActual - 2 + i);
 const capital = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 const rapidas = CROPS.map((c) => ({ id: c.id, nombre: capital(cropName(c.id, lang)) }));
 ---
@@ -141,18 +143,17 @@ const rapidas = CROPS.map((c) => ({ id: c.id, nombre: capital(cropName(c.id, lan
       <input type="date" id="planting_date" name="planting_date" class="entrada" aria-describedby="error-siembra" />
     </div>
     <div class="pila-corta siembra__mes">
-      <label for="planting_month" class="etiqueta etiqueta--fina">{FORMULARIO_EXTRA.mesSiembra}</label>
-      <input
-        type="month"
-        id="planting_month"
-        name="planting_month"
-        class="entrada dato-tecnico"
-        pattern="\d{4}-\d{2}"
-        placeholder="2027-06"
-        autocomplete="off"
-        aria-describedby="ayuda-mes error-siembra"
-      />
-      <p id="ayuda-mes" class="texto-suave">{FORMULARIO_EXTRA.ayudaMes}</p>
+      <label for="planting_month_m" class="etiqueta etiqueta--fina">{FORMULARIO_EXTRA.mesSiembra}</label>
+      <div class="siembra__mes-campos">
+        <select id="planting_month_m" name="planting_month_m" class="entrada" aria-label={FORMULARIO_EXTRA.mes} aria-describedby="error-siembra">
+          <option value="">{FORMULARIO_EXTRA.elegirMes}</option>
+          {FORMULARIO_EXTRA.meses.map((nombre, i) => <option value={String(i + 1).padStart(2, '0')}>{nombre}</option>)}
+        </select>
+        <select id="planting_month_y" name="planting_month_y" class="entrada" aria-label={FORMULARIO_EXTRA.anio} aria-describedby="error-siembra">
+          <option value="">{FORMULARIO_EXTRA.elegirAnio}</option>
+          {anios.map((y) => <option value={String(y)}>{y}</option>)}
+        </select>
+      </div>
     </div>
     <label class="opcion-fila">
       <input type="checkbox" name="planting_unknown" aria-describedby="error-siembra" />

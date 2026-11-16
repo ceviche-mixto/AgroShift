@@ -156,7 +156,9 @@ function init(root: HTMLElement) {
     if (!water) errors.agua = CAMPOS.agua.error;
 
     const precision = (checked('planting_precision') ?? 'day') as 'day' | 'month';
-    const month = field('planting_month').value.trim();
+    const monthPart = field<HTMLSelectElement>('planting_month_m').value;
+    const yearPart = field<HTMLSelectElement>('planting_month_y').value;
+    const month = monthPart && yearPart ? `${yearPart}-${monthPart}` : '';
     const day = field('planting_date').value.trim();
     const date = precision === 'month' ? (/^\d{4}-(0[1-9]|1[0-2])$/.test(month) ? `${month}-01` : '') : day;
     if (!field('planting_unknown').checked && !(date && date >= '2000-01-01')) errors.siembra = CAMPOS.siembra.error;
@@ -198,7 +200,9 @@ function init(root: HTMLElement) {
     field('planting_unknown').checked = input.planting.status === 'unknown';
     pick('planting_precision', input.planting.status === 'known' ? input.planting.precision : 'day');
     field('planting_date').value = input.planting.status === 'known' && input.planting.precision === 'day' ? input.planting.date : '';
-    field('planting_month').value = input.planting.status === 'known' && input.planting.precision === 'month' ? input.planting.date.slice(0, 7) : '';
+    const ym = input.planting.status === 'known' && input.planting.precision === 'month' ? input.planting.date.slice(0, 7) : '-';
+    field<HTMLSelectElement>('planting_month_y').value = ym.split('-')[0] ?? '';
+    field<HTMLSelectElement>('planting_month_m').value = ym.split('-')[1] ?? '';
     for (const g of GROUPS) setError(g, null);
     showCoords(input.location.origin === 'manual_coordinates');
     sync();

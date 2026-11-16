@@ -307,6 +307,7 @@ body {
 
 /* Siembra: solo el campo que corresponde a la precisión elegida. */
 .siembra__mes { display: none; }
+.siembra__mes-campos { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
 .grupo--siembra:has([name="planting_precision"][value="month"]:checked) .siembra__mes { display: grid; }
 .grupo--siembra:has([name="planting_precision"][value="month"]:checked) .siembra__dia { display: none; }
 

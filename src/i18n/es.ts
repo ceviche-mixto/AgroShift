@@ -571,7 +571,11 @@ export const SITIO = {
 export const FORMULARIO_EXTRA = {
   diaSiembra: 'Día de siembra',
   mesSiembra: 'Mes de siembra',
-  ayudaMes: 'Si no ves un calendario, escribe el año y el mes así: 2027-06.',
+  mes: 'Mes',
+  anio: 'Año',
+  elegirMes: 'Elige el mes',
+  elegirAnio: 'Elige el año',
+  meses: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
   notaFinal: 'Después del resultado podrás sumar datos de tu suelo y de tus cultivos anteriores.',
   eligeLocalidad: 'Elige tu localidad',
 } as const;
