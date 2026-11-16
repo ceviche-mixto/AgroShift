@@ -24,7 +24,12 @@ const t = SITIO.inicio;
     <div data-ff="status" role="status" aria-live="polite"></div>
 
     <div data-ff="loading" class="espera" hidden>
-      <span class="espera__giro" aria-hidden="true"></span>
+      <svg class="espera__giro" viewBox="0 0 96 56" width="96" height="56" aria-hidden="true" focusable="false">
+        <path class="espera__arco" d="M6 26Q48 -10 90 26" />
+        <path class="espera__terreno" d="M2 48C16 36 28 52 44 42S74 34 94 46" />
+        <circle class="espera__pulso" cx="46" cy="44" r="3" />
+        <circle class="espera__satelite" r="3.5" />
+      </svg>
       <p>
         <strong>{ESTADOS.espera.titulo}</strong><br />
         {ESTADOS.espera.explicacion}

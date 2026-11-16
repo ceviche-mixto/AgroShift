@@ -649,6 +649,7 @@ function init(root: HTMLElement) {
     renderSources(s.response);
     ff('answer').replaceChildren();
     ff('refresh').hidden = s.origin === 'network' || !navigator.onLine;
+    if (results.hidden) results.setAttribute('data-anim', ''); // el escalonado solo en la primera aparición, no al sustituir el plan guardado por el de la red
     results.hidden = false;
     setStatus(originMessage(s));
   }
@@ -717,6 +718,7 @@ function init(root: HTMLElement) {
   ff('refresh').addEventListener('click', () => current && void run(current.input));
   ff('edit').addEventListener('click', () => {
     results.hidden = true;
+    results.removeAttribute('data-anim');
     goTo(0);
   });
 

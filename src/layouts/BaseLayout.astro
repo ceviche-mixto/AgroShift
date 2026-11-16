@@ -2,6 +2,7 @@
 import '../styles/global.css';
 import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
+import SplashScreen from '../components/SplashScreen.astro';
 import { dict, LANG_STORAGE_KEY, pathFor, type Lang } from '../i18n/index.ts';
 
 interface Props {
@@ -29,6 +30,7 @@ const redirect = `try{if(localStorage.getItem(${JSON.stringify(LANG_STORAGE_KEY)
     {lang === 'en' && <script is:inline set:html={redirect}></script>}
   </head>
   <body>
+    <SplashScreen />
     <a class="saltar" href="#contenido">{t.SITIO.saltar}</a>
     <Header lang={lang} path={path} />
     <main id="contenido" tabindex="-1" class="mx-auto max-w-3xl px-4 py-6">
