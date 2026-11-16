@@ -466,20 +466,21 @@ body {
 .ayuda__pasos li { display: grid; gap: 0.125rem; padding-left: 0.75rem; border-left: 4px solid var(--color-primario); }
 .ayuda__ok { width: 100%; cursor: pointer; }
 
-.pie { margin-top: 3rem; background: var(--marca-fondo); color: var(--marca-texto); }
+.pie { --pie-gutter: clamp(1rem, 4vw, 2rem); margin-top: 3rem; background: var(--marca-fondo); color: var(--marca-texto); }
 :where(.pie) :where(p, ul, ol) { margin: 0; padding: 0; list-style: none; }
 .pie__estado { border-bottom: 1px solid var(--marca-borde); }
-.pie__estado-in { display: flex; align-items: center; flex-wrap: wrap; gap: 0.25rem 1.5rem; max-width: 64rem; margin: 0 auto; padding: 0.875rem 1rem; font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace; font-size: 0.875rem; }
+.pie__estado-in { display: flex; align-items: center; flex-wrap: wrap; gap: 0.25rem 1.5rem; max-width: 80rem; margin: 0 auto; padding: 0.875rem var(--pie-gutter); font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace; font-size: 0.875rem; }
 .pie__estado-ok { display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 700; }
 .pie__punto { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--marca-lima); }
 .pie__estado-txt { color: var(--marca-suave); }
 .pie__estado-lic { margin-left: auto; color: var(--marca-suave); }
-.pie__contenido { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2rem; max-width: 64rem; margin: 0 auto; padding: 2rem 1rem; }
-@media (min-width: 48rem) { .pie__contenido { grid-template-columns: repeat(12, minmax(0, 1fr)); align-items: start; } .pie__marca { grid-column: span 4; } .pie__nav { grid-column: span 4; } .pie__evento { grid-column: span 4; } }
+.pie__contenido { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2rem; max-width: 80rem; margin: 0 auto; padding: 2rem var(--pie-gutter); }
+@media (min-width: 48rem) { .pie__contenido { grid-template-columns: repeat(12, minmax(0, 1fr)); align-items: start; } .pie__marca { grid-column: span 12; } .pie__nav, .pie__evento { grid-column: span 6; } }
+@media (min-width: 75rem) { .pie__marca { grid-column: span 5; } .pie__nav { grid-column: span 3; } .pie__evento { grid-column: span 4; } }
 .pie__marca { display: grid; gap: 1rem; justify-items: start; min-width: 0; }
 .pie__aviso { max-width: 28rem; color: var(--marca-suave); }
 .pie__pasos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem; width: 100%; }
-.pie__paso { position: relative; display: grid; gap: 0.25rem; align-content: start; min-width: 0; padding: 0.625rem 0.75rem; background: var(--marca-panel); border: 1px solid var(--marca-borde); border-radius: 0.5rem; font-size: 0.8125rem; }
+.pie__paso { position: relative; display: grid; gap: 0.25rem; align-content: start; min-width: 0; padding: 0.625rem 0.75rem; background: var(--marca-panel); border: 1px solid var(--marca-borde); border-radius: 0.5rem; font-size: 0.8125rem; word-break: normal; overflow-wrap: normal; hyphens: manual; }
 .pie__paso strong { font-size: 0.875rem; }
 .pie__paso span { color: var(--marca-suave); font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace; font-size: 0.75rem; }
 .pie__paso:not(.pie__paso--final)::after { content: '→'; position: absolute; top: 50%; right: -1.125rem; transform: translateY(-50%); color: var(--marca-borde); }
@@ -504,7 +505,7 @@ body {
 .pie__equipo { display: grid; gap: 0.5rem; }
 .pie__equipo li { display: flex; align-items: center; gap: 0.75rem; }
 .pie__iniciales { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 1.75rem; height: 1.75rem; border: 1px solid var(--marca-borde); border-radius: 50%; color: var(--marca-lima); font-size: 0.6875rem; font-weight: 700; }
-.pie__base { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem 1.5rem; max-width: 64rem; margin: 0 auto; padding: 1.25rem 1rem 2rem; border-top: 1px solid var(--marca-panel); }
+.pie__base { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem 1.5rem; max-width: 80rem; margin: 0 auto; padding: 1.25rem var(--pie-gutter) 2rem; border-top: 1px solid var(--marca-panel); }
 .pie__descargo { max-width: 34rem; color: var(--marca-suave); font-size: 0.875rem; }
 .pie__derechos { white-space: nowrap; }
 /* Selector EN | ES del pie: píldora segmentada. */
