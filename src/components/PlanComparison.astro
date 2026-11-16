@@ -1,9 +1,10 @@
 ---
 // Plan A y Plan B juntos. La isla clona la plantilla `plan` en cada montaje y rellena los slots.
+import '../styles/clima.css';
 import { dict, type Lang } from '../i18n/index.ts';
 
 const { lang } = Astro.props as { lang: Lang };
-const { SECCIONES_PLAN: S } = dict(lang);
+const { SECCIONES_PLAN: S, CLIMA_ZONA: C } = dict(lang);
 ---
 <div class="pila">
   <div data-ff="result-state"></div>
@@ -12,6 +13,23 @@ const { SECCIONES_PLAN: S } = dict(lang);
     <div data-ff="plan-a"></div>
     <div data-ff="plan-b"></div>
   </div>
+
+  <section data-ff="climate" class="clima" aria-labelledby="clima-titulo" hidden>
+    <h3 id="clima-titulo" class="subtitulo">{C.titulo}</h3>
+    <p class="texto-suave">{C.intro}</p>
+    <dl class="clima__lista">
+      {([['temp', C.temperatura], ['rain', C.lluvia], ['soil', C.suelo]] as const).map(([k, label]) => (
+        <div class="clima__fila" data-row={k}>
+          <dt>{label}</dt>
+          <dd>
+            <strong data-slot="value" class="clima__valor"></strong>
+            <span data-slot="source" class="texto-suave"></span>
+            <span data-slot="period" class="texto-suave"></span>
+          </dd>
+        </div>
+      ))}
+    </dl>
+  </section>
 
   <section data-ff="missing" class="pila-corta" aria-labelledby="falta-titulo" hidden>
     <h3 id="falta-titulo" class="subtitulo">{S.queFalta}</h3>

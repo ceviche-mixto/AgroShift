@@ -2,7 +2,7 @@
 import { dict, type Lang } from '../i18n/index.ts';
 
 const { lang } = Astro.props as { lang: Lang };
-const { CAMPOS, COORDENADAS_MANUAL, FORMULARIO_EXTRA } = dict(lang);
+const { CAMPOS, COORDENADAS_MANUAL, FORMULARIO_EXTRA, MAPA_PARCELA: M } = dict(lang);
 const c = CAMPOS.ubicacion;
 ---
 <div class="pila">
@@ -35,6 +35,21 @@ const c = CAMPOS.ubicacion;
   <fieldset data-ff="place-results" class="opciones" hidden>
     <legend class="etiqueta">{FORMULARIO_EXTRA.eligeLocalidad}</legend>
   </fieldset>
+
+  <div>
+    <button type="button" class="opcion" data-ff="map-toggle" aria-expanded="false" aria-controls="mapa-parcela">{M.abrir}</button>
+  </div>
+
+  <div id="mapa-parcela" data-ff="map" role="group" aria-label={M.region} class="mapa-parcela" hidden>
+    <p class="texto-suave">{M.ayuda}</p>
+    <div data-ff="map-canvas" class="mapa-parcela__lienzo" tabindex="0"></div>
+    <p data-ff="map-status" aria-live="polite" class="mapa-parcela__estado"></p>
+    <div class="mapa-parcela__acciones">
+      <button type="button" class="opcion" data-ff="map-center">{M.marcarCentro}</button>
+      <button type="button" class="opcion" data-ff="map-clear">{M.limpiar}</button>
+      <button type="button" class="opcion" data-ff="map-use" disabled>{M.usar}</button>
+    </div>
+  </div>
 
   <div>
     <button type="button" class="enlace enlace--boton" data-ff="coords-toggle" aria-expanded="false" aria-controls="coordenadas">

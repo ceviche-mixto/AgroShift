@@ -1,7 +1,7 @@
 ---
 import '../styles/global.css';
 import Footer from '../components/Footer.astro';
-import LangSwitch from '../components/LangSwitch.astro';
+import Header from '../components/Header.astro';
 import { dict, LANG_STORAGE_KEY, pathFor, type Lang } from '../i18n/index.ts';
 
 interface Props {
@@ -23,16 +23,14 @@ const redirect = `try{if(localStorage.getItem(${JSON.stringify(LANG_STORAGE_KEY)
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description ?? t.SITIO.descripcion} />
     <title>{title}</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="alternate" hreflang="en" href={pathFor('en', path)} />
     <link rel="alternate" hreflang="es" href={pathFor('es', path)} />
     {lang === 'en' && <script is:inline set:html={redirect}></script>}
   </head>
   <body>
     <a class="saltar" href="#contenido">{t.SITIO.saltar}</a>
-    <header class="mx-auto max-w-3xl px-4 pt-6 cabecera">
-      <p class="font-bold">AgroShift</p>
-      <LangSwitch lang={lang} path={path} />
-    </header>
+    <Header lang={lang} path={path} />
     <main id="contenido" tabindex="-1" class="mx-auto max-w-3xl px-4 py-6">
       <slot />
     </main>

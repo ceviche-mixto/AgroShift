@@ -1,0 +1,54 @@
+---
+// Cabecera: marca, ayuda («¿cómo funciona?», <dialog> nativo) y selector EN | ES.
+import { dict, pathFor, type Lang } from '../i18n/index.ts';
+import LangSwitch from './LangSwitch.astro';
+import Logo from './Logo.astro';
+
+interface Props {
+  lang: Lang;
+  path: string;
+}
+const { lang, path } = Astro.props;
+const { CABECERA: C } = dict(lang);
+---
+<header class="cabecera">
+  <div class="cabecera__in">
+    <a class="cabecera__marca" href={pathFor(lang, '/')} aria-label={C.inicio}><Logo /></a>
+    <div class="cabecera__acciones">
+      <button type="button" class="ayuda-boton" data-ayuda-abrir aria-haspopup="dialog">
+        <span class="ayuda-boton__signo" aria-hidden="true">?</span>{C.ayuda}
+      </button>
+      <LangSwitch lang={lang} path={path} />
+    </div>
+  </div>
+</header>
+
+<dialog class="ayuda" aria-labelledby="ayuda-titulo" data-ayuda>
+  <div class="ayuda__cabeza">
+    <h2 id="ayuda-titulo" class="ayuda__titulo">{C.titulo}</h2>
+    <button type="button" class="ayuda__cerrar" data-ayuda-cerrar aria-label={C.cerrar}>
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <ol class="ayuda__pasos">
+    {C.pasos.map((p) => (
+      <li>
+        <strong>{p.titulo}</strong>
+        <span>{p.texto}</span>
+      </li>
+    ))}
+  </ol>
+  <button type="button" class="boton ayuda__ok" data-ayuda-cerrar>{C.entendido}</button>
+</dialog>
+
+<script>
+  // showModal() pone el foco dentro, Esc cierra y el navegador devuelve el foco al botón que abrió.
+  const dlg = document.querySelector<HTMLDialogElement>('[data-ayuda]');
+  const opener = document.querySelector<HTMLButtonElement>('[data-ayuda-abrir]');
+  opener?.addEventListener('click', () => dlg?.showModal());
+  dlg?.addEventListener('click', (e) => {
+    const t = e.target as Element;
+    if (t === dlg || t.closest('[data-ayuda-cerrar]')) dlg.close(); // clic en el fondo o en cerrar
+  });
+  dlg?.addEventListener('close', () => opener?.focus());
+</script>

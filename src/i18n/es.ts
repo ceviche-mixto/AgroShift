@@ -432,10 +432,26 @@ export const COORDENADAS_MANUAL = 'Ingresar coordenadas manualmente';
 
 export const PIE = {
   nombre: 'AgroShift',
-  fuentes: 'Fuentes científicas y herramientas',
+  fuentes: 'Fuentes científicas y herramientas de IA',
+  repo: 'Código abierto (Apache 2.0) en GitHub',
+  navegacion: 'Más sobre AgroShift',
   aviso: 'Uso orientativo: AgroShift no reemplaza la revisión en tu campo ni a un técnico agrónomo.',
   evento: 'NASA Space Apps Challenge Chiclayo 2026',
   equipo: 'Equipo OneCtrl: Giancarlo Luciano Larios Infantes, Enzo Gabriel García Infantes y Sergio Anibal Tuesta Rodas',
+} as const;
+
+/** Cabecera: enlace de la marca y diálogo «cómo funciona». */
+export const CABECERA = {
+  inicio: 'AgroShift, ir a la página de inicio',
+  ayuda: 'Ayuda',
+  titulo: 'Cómo funciona AgroShift',
+  cerrar: 'Cerrar la ayuda',
+  entendido: 'Entendido',
+  pasos: [
+    { titulo: '1. Cuéntanos de tu campo', texto: 'Dinos dónde está y qué cultivas o qué cosechaste por última vez.' },
+    { titulo: '2. Leemos datos de la NASA', texto: 'AgroShift lee datos de la NASA sobre lluvia, humedad del suelo y calor de tu zona.' },
+    { titulo: '3. Recibe tu plan de siembra', texto: 'Recibes un plan en palabras simples que compara dos opciones de siembra.' },
+  ],
 } as const;
 
 export interface FuenteEnlace {
@@ -492,6 +508,8 @@ export const PAGINA_FUENTES = {
   herramientas: {
     titulo: 'Herramientas con las que se hizo',
     items: [
+      { nombre: 'Claude Code', descripcion: 'Asistente de IA que ayudó a escribir y reorganizar el código, las pruebas y la documentación. El equipo revisó y ejecutó cada cambio.', producto: 'Claude Code (Anthropic)', enlace: { texto: 'claude.com/product/claude-code', url: 'https://claude.com/product/claude-code' } },
+      { nombre: 'ChatGPT', descripcion: 'Asistente de IA usado en la planificación inicial: ideas del concepto, comparación de datos de la NASA y borrador de la descripción del proyecto.', producto: 'ChatGPT (OpenAI)', enlace: { texto: 'chatgpt.com', url: 'https://chatgpt.com/' } },
       { nombre: 'Astro', descripcion: 'Páginas rápidas que funcionan también con poca señal.', producto: 'Astro', enlace: { texto: 'astro.build', url: 'https://astro.build/' } },
       { nombre: 'Tailwind CSS', descripcion: 'Estilos de la aplicación.', producto: 'Tailwind CSS', enlace: { texto: 'tailwindcss.com', url: 'https://tailwindcss.com/' } },
       { nombre: 'TypeScript y Zod', descripcion: 'Código con tipos y revisión de los datos que entran.', producto: 'TypeScript, Zod', enlace: { texto: 'zod.dev', url: 'https://zod.dev/' } },
@@ -600,4 +618,40 @@ export const PLANES_GUARDADOS = {
   etiqueta: (cultivo: string | null, lat: number, lon: number, fecha: string) =>
     `${cultivo ?? 'Cultivo sin indicar'} · ${lat.toFixed(2)}, ${lon.toFixed(2)} · ${fecha}`,
   separadorCultivos: ', luego ',
+} as const;
+
+/** Mapa satelital opcional del paso 1 (Leaflet, se carga solo cuando se pide). */
+export const MAPA_PARCELA = {
+  abrir: 'Seleccionar parcela en mapa satelital',
+  region: 'Mapa satelital de tu parcela',
+  ayuda: 'Toca el mapa para marcar tu parcela. Marca hasta 4 esquinas para delimitarla; el quinto toque empieza de nuevo. Siempre puedes escribir las coordenadas.',
+  mapa: 'Mapa satelital. Usa las flechas para moverlo y las teclas más y menos para acercar o alejar.',
+  marcarCentro: 'Marcar el centro del mapa',
+  limpiar: 'Borrar',
+  usar: 'Usar esta ubicación',
+  cargando: 'Cargando el mapa…',
+  errorCarga: 'No se pudo cargar el mapa. Escribe las coordenadas.',
+  vacio: 'Aún no marcaste nada.',
+  zoomMas: 'Acercar',
+  zoomMenos: 'Alejar',
+  atribucion: 'Imágenes: Esri, Maxar, Earthstar Geographics y la comunidad de usuarios de GIS',
+  centro: (lat: string, lon: string) => `Centro marcado: ${lat}, ${lon}.`,
+  parcela: (n: number, lat: string, lon: string, ha: string) => `Parcela con ${n} esquinas marcadas. Centro: ${lat}, ${lon}. Unas ${ha} hectáreas.`,
+  aplicada: (lat: string, lon: string) => `Ubicación tomada del mapa: ${lat}, ${lon}.`,
+} as const;
+
+/** Tarjeta «Clima de tu zona» en los resultados. Los valores salen de NASA POWER y SMAP. */
+export const CLIMA_ZONA = {
+  titulo: 'Clima de tu zona',
+  intro: 'Lo que los satélites y modelos de la NASA detectan en tu zona, sobre una celda de varios kilómetros, no en tu parcela exacta.',
+  temperatura: 'Temperatura media',
+  lluvia: 'Lluvia en un año',
+  suelo: 'Agua en el suelo',
+  noDisponible: 'No disponible',
+  fuente: (nombre: string) => `Fuente: ${nombre}`,
+  fuentes: { power: 'NASA POWER', smap: 'NASA SMAP' },
+  periodo: (rango: string) => `Periodo: ${rango}`,
+  grados: (n: string) => `${n} °C`,
+  milimetros: (n: string) => `${n} mm`,
+  porcentajeSuelo: (n: string) => `${n} % del volumen del suelo`,
 } as const;

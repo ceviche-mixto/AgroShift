@@ -1,6 +1,7 @@
 ---
 import { dict, pathFor, type Lang } from '../i18n/index.ts';
 import LangSwitch from './LangSwitch.astro';
+import Logo from './Logo.astro';
 
 interface Props {
   lang: Lang;
@@ -8,15 +9,19 @@ interface Props {
 }
 const { lang, path } = Astro.props;
 const { PIE } = dict(lang);
+const REPO = 'https://github.com/ceviche-mixto/AgroShift';
 ---
 <footer class="pie">
   <div class="pie__contenido">
     <div class="pie__marca">
-      <p class="pie__nombre">{PIE.nombre}</p>
+      <Logo size={40} />
       <p class="pie__aviso">{PIE.aviso}</p>
-      <p><a class="enlace" href={pathFor(lang, '/fuentes/')}>{PIE.fuentes}</a></p>
-      <LangSwitch lang={lang} path={path} />
     </div>
+    <nav class="pie__nav" aria-label={PIE.navegacion}>
+      <a class="enlace" href={pathFor(lang, '/fuentes/')}>{PIE.fuentes}</a>
+      <a class="enlace" href={REPO} target="_blank" rel="noopener noreferrer">{PIE.repo}</a>
+      <LangSwitch lang={lang} path={path} />
+    </nav>
     <div class="pie__evento">
       <p class="pie__evento-titulo">{PIE.evento}</p>
       <p class="pie__equipo" data-ff="team">{PIE.equipo}</p>

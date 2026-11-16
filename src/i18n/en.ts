@@ -432,10 +432,26 @@ export const COORDENADAS_MANUAL = 'Enter coordinates manually';
 
 export const PIE = {
   nombre: 'AgroShift',
-  fuentes: 'Scientific sources and tools',
+  fuentes: 'Scientific sources & AI tools',
+  repo: 'Open Source (Apache 2.0) on GitHub',
+  navegacion: 'More about AgroShift',
   aviso: 'For guidance only: AgroShift does not replace checking your field or an agronomy technician.',
   evento: 'NASA Space Apps Challenge Chiclayo 2026',
-  equipo: 'Team OneCtrl: Giancarlo Luciano Larios Infantes, Enzo Gabriel García Infantes and Sergio Anibal Tuesta Rodas',
+  equipo: 'Team OneCtrl: Giancarlo Luciano Larios Infantes, Enzo Gabriel García Infantes & Sergio Anibal Tuesta Rodas',
+} as const;
+
+/** Header: brand link and the "how it works" dialog. */
+export const CABECERA = {
+  inicio: 'AgroShift, go to the home page',
+  ayuda: 'Help',
+  titulo: 'How AgroShift works',
+  cerrar: 'Close help',
+  entendido: 'Got it',
+  pasos: [
+    { titulo: '1. Tell us about your field', texto: 'Say where it is and which crop you grow or last harvested.' },
+    { titulo: '2. We read NASA data', texto: 'AgroShift reads NASA data on rain, soil moisture and heat for your area.' },
+    { titulo: '3. Get your planting plan', texto: 'You get a plain-language plan that compares two planting options.' },
+  ],
 } as const;
 
 export interface FuenteEnlace {
@@ -492,6 +508,8 @@ export const PAGINA_FUENTES = {
   herramientas: {
     titulo: 'Tools it was built with',
     items: [
+      { nombre: 'Claude Code', descripcion: 'AI assistant that helped write and refactor the code, the tests and the documentation. The team reviewed and ran every change.', producto: 'Claude Code (Anthropic)', enlace: { texto: 'claude.com/product/claude-code', url: 'https://claude.com/product/claude-code' } },
+      { nombre: 'ChatGPT', descripcion: 'AI assistant used in early planning: ideas for the concept, comparing NASA datasets and drafting the project description.', producto: 'ChatGPT (OpenAI)', enlace: { texto: 'chatgpt.com', url: 'https://chatgpt.com/' } },
       { nombre: 'Astro', descripcion: 'Fast pages that also work with a weak signal.', producto: 'Astro', enlace: { texto: 'astro.build', url: 'https://astro.build/' } },
       { nombre: 'Tailwind CSS', descripcion: 'Styles of the app.', producto: 'Tailwind CSS', enlace: { texto: 'tailwindcss.com', url: 'https://tailwindcss.com/' } },
       { nombre: 'TypeScript and Zod', descripcion: 'Typed code and validation of incoming data.', producto: 'TypeScript, Zod', enlace: { texto: 'zod.dev', url: 'https://zod.dev/' } },
@@ -600,4 +618,40 @@ export const PLANES_GUARDADOS = {
   etiqueta: (cultivo: string | null, lat: number, lon: number, fecha: string) =>
     `${cultivo ?? 'Crop not given'} · ${lat.toFixed(2)}, ${lon.toFixed(2)} · ${fecha}`,
   separadorCultivos: ', then ',
+} as const;
+
+/** Optional satellite map in step 1 (Leaflet, loaded only when asked for). */
+export const MAPA_PARCELA = {
+  abrir: 'Select field on satellite map',
+  region: 'Satellite map of your field',
+  ayuda: 'Tap the map to mark your field. Mark up to 4 corners to outline it; a fifth tap starts over. You can always type the coordinates instead.',
+  mapa: 'Satellite map. Use the arrow keys to move it and the plus and minus keys to zoom.',
+  marcarCentro: 'Mark the center of the map',
+  limpiar: 'Clear',
+  usar: 'Use this location',
+  cargando: 'Loading the map…',
+  errorCarga: 'The map could not load. Type the coordinates instead.',
+  vacio: 'Nothing marked yet.',
+  zoomMas: 'Zoom in',
+  zoomMenos: 'Zoom out',
+  atribucion: 'Imagery: Esri, Maxar, Earthstar Geographics and the GIS User Community',
+  centro: (lat: string, lon: string) => `Center marked: ${lat}, ${lon}.`,
+  parcela: (n: number, lat: string, lon: string, ha: string) => `Field with ${n} corners marked. Center: ${lat}, ${lon}. About ${ha} hectares.`,
+  aplicada: (lat: string, lon: string) => `Location set from the map: ${lat}, ${lon}.`,
+} as const;
+
+/** "Climate of your area" card in the results. Values come from NASA POWER and SMAP. */
+export const CLIMA_ZONA = {
+  titulo: 'Climate of your area',
+  intro: 'What NASA satellites and models detect for your area, over a grid cell of several kilometers, not on your exact field.',
+  temperatura: 'Average temperature',
+  lluvia: 'Rain in a year',
+  suelo: 'Water in the soil',
+  noDisponible: 'Not available',
+  fuente: (nombre: string) => `Source: ${nombre}`,
+  fuentes: { power: 'NASA POWER', smap: 'NASA SMAP' },
+  periodo: (rango: string) => `Period: ${rango}`,
+  grados: (n: string) => `${n} °C`,
+  milimetros: (n: string) => `${n} mm`,
+  porcentajeSuelo: (n: string) => `${n} % of the soil volume`,
 } as const;

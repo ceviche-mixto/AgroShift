@@ -1,4 +1,6 @@
 import type { Alert, AnalyzeResponse, EvidenceRecord, FarmInput, Finding, Plan } from '../domain/contracts.ts';
+import { climateSummary, type ClimateFigure } from '../domain/climate-summary.ts';
+import type { LatLon, ParcelShape } from '../domain/parcel.ts';
 import { findCrop, nameKeys, suggestCrops, type CropSuggestion } from '../domain/crops.ts';
 import { answerLocally, cropName, explainFinding, familyName, listFacts, needsIrrigation, type QuestionId, QUESTION_IDS } from '../domain/explain.ts';
 import { parseFarmInput } from '../domain/schemas.ts';
@@ -26,6 +28,8 @@ const {
   GUARDADO_ESTADO,
   hace,
   CAMPOS,
+  CLIMA_ZONA,
+  MAPA_PARCELA,
   NATURALEZA_ESCENARIO,
   ORIGEN_DATO,
   PANEL_FUENTES,
@@ -323,6 +327,7 @@ function init(root: HTMLElement) {
   const stepCount = ff('step-count');
   const progress = ff('progress');
   const progressBar = ff('progress-bar');
+  const progressMarker = ff('progress-marker');
   const back = ff<HTMLButtonElement>('back');
   const next = ff<HTMLButtonElement>('next');
   const stepHint = ff('step-hint');
@@ -347,7 +352,9 @@ function init(root: HTMLElement) {
     stepCount.textContent = label;
     progress.setAttribute('aria-valuenow', String(step + 1));
     progress.setAttribute('aria-valuetext', label);
-    progressBar.style.width = `${((step + 1) / GROUPS.length) * 100}%`;
+    const pct = `${((step + 1) / GROUPS.length) * 100}%`;
+    progressBar.style.width = pct;
+    progressMarker.style.left = pct;
     back.hidden = step === 0;
     next.hidden = step === last;
     submit.hidden = step !== last;
@@ -454,6 +461,69 @@ function init(root: HTMLElement) {
     }
   });
 
+  // ---------- Ubicación: mapa satelital (Leaflet se descarga solo al abrirlo) ----------
+
+  const mapBox = ff('map');
+  const mapToggle = ff<HTMLButtonElement>('map-toggle');
+  const mapStatus = ff('map-status');
+  const mapUse = ff<HTMLButtonElement>('map-use');
+  let parcelMap: import('./parcel-map.ts').ParcelMap | null = null;
+  let mapLoading = false;
+
+  const typedPoint = (): LatLon | null => {
+    const lat = num(field('lat').value);
+    const lon = num(field('lon').value);
+    return lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180 ? { lat, lon } : null;
+  };
+  const coord = (n: number) => localNum(Number(n.toFixed(5)));
+  function describeMap(points: LatLon[], shape: ParcelShape | null) {
+    mapUse.disabled = !shape;
+    if (!shape) {
+      mapStatus.textContent = MAPA_PARCELA.vacio;
+      return;
+    }
+    const lat = coord(shape.center.lat);
+    const lon = coord(shape.center.lon);
+    const ha = shape.hectares?.toLocaleString(lang, { maximumFractionDigits: shape.hectares < 1 ? 2 : 1 });
+    mapStatus.textContent = ha ? MAPA_PARCELA.parcela(points.length, lat, lon, ha) : MAPA_PARCELA.centro(lat, lon);
+  }
+
+  mapToggle.addEventListener('click', async () => {
+    const open = mapToggle.getAttribute('aria-expanded') !== 'true';
+    mapToggle.setAttribute('aria-expanded', String(open));
+    mapBox.hidden = !open;
+    if (!open) return;
+    if (parcelMap) return parcelMap.refresh(typedPoint());
+    if (mapLoading) return;
+    mapLoading = true;
+    mapStatus.textContent = MAPA_PARCELA.cargando;
+    try {
+      const { mountParcelMap } = await import('./parcel-map.ts');
+      parcelMap = mountParcelMap({ el: ff('map-canvas'), start: typedPoint(), text: MAPA_PARCELA, onChange: describeMap });
+      mapStatus.textContent = MAPA_PARCELA.vacio;
+    } catch {
+      mapStatus.textContent = MAPA_PARCELA.errorCarga;
+      showCoords(true);
+    } finally {
+      mapLoading = false;
+    }
+  });
+  ff('map-center').addEventListener('click', () => parcelMap?.markCenter());
+  ff('map-clear').addEventListener('click', () => parcelMap?.clear());
+  // Mismo camino que escribir las coordenadas: los eventos `input` limpian el error, marcan el origen manual y sincronizan.
+  mapUse.addEventListener('click', () => {
+    const shape = parcelMap?.shape();
+    if (!shape) return;
+    const lat = coord(shape.center.lat);
+    const lon = coord(shape.center.lon);
+    field('lat').value = lat;
+    field('lon').value = lon;
+    placeResults.hidden = true;
+    for (const n of ['lat', 'lon']) field(n).dispatchEvent(new Event('input', { bubbles: true }));
+    showCoords(true);
+    say(MAPA_PARCELA.aplicada(lat, lon));
+  });
+
   // ---------- Resultado ----------
 
   let current: { input: FarmInput; response: AnalyzeResponse; origin: AnalyzeSuccess['origin'] } | null = null;
@@ -487,6 +557,26 @@ function init(root: HTMLElement) {
   }
 
   const day = (iso: string) => new Date(iso).toLocaleDateString(lang, { dateStyle: 'medium' });
+
+  /** «Clima de tu zona»: cifras reales de NASA POWER y SMAP de la respuesta; sin dato, texto neutro. */
+  function renderClimate(records: EvidenceRecord[]) {
+    const s = climateSummary(records);
+    const n = (v: number, digits: number) => v.toLocaleString(lang, { minimumFractionDigits: digits, maximumFractionDigits: digits });
+    const rows: [string, ClimateFigure | null, (v: number) => string][] = [
+      ['temp', s.meanTempC, (v) => CLIMA_ZONA.grados(n(v, 1))],
+      ['rain', s.annualRainMm, (v) => CLIMA_ZONA.milimetros(n(v, 0))],
+      ['soil', s.soilMoisture, (v) => CLIMA_ZONA.porcentajeSuelo(n(v * 100, 0))],
+    ];
+    for (const [key, fig, text] of rows) {
+      const row = one<HTMLElement>(`[data-row="${key}"]`, ff('climate'));
+      fill(row, {
+        value: fig ? text(fig.value) : CLIMA_ZONA.noDisponible,
+        source: fig ? CLIMA_ZONA.fuente(CLIMA_ZONA.fuentes[fig.source]) : '',
+        period: fig ? CLIMA_ZONA.periodo(PANEL_FUENTES.rango(day(fig.period.start), day(fig.period.end))) : '',
+      });
+    }
+    ff('climate').hidden = false;
+  }
 
   function renderSources(response: AnalyzeResponse) {
     const { records, sources } = response.result.climate;
@@ -554,6 +644,7 @@ function init(root: HTMLElement) {
     const missing = ff('missing');
     list(missing, facts(result.missing));
     missing.hidden = result.missing.length === 0;
+    renderClimate(result.climate.records);
     renderAlerts(alerts);
     renderSources(s.response);
     ff('answer').replaceChildren();

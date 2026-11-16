@@ -571,7 +571,7 @@ test.describe('idioma: inglés por defecto y selector EN | ES', () => {
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Plan your next planting');
     await expect(page.locator('[data-ff="step-count"]')).toHaveText('Step 1 of 5');
-    await expect(page.getByRole('contentinfo')).toContainText('Team OneCtrl: Giancarlo Luciano Larios Infantes, Enzo Gabriel García Infantes and Sergio Anibal Tuesta Rodas');
+    await expect(page.getByRole('contentinfo')).toContainText('Team OneCtrl: Giancarlo Luciano Larios Infantes, Enzo Gabriel García Infantes & Sergio Anibal Tuesta Rodas');
 
     // Dos selectores (cabecera y pie), con el idioma activo marcado y tamaño táctil de 48 px
     const switches = page.getByRole('navigation', { name: 'Language' });
