@@ -331,7 +331,8 @@ function init(root: HTMLElement) {
   const stepCount = ff('step-count');
   const progress = ff('progress');
   const progressBar = ff('progress-bar');
-  const progressMarker = ff('progress-marker');
+  const stepName = ff('step-name');
+  const dots = [...form.querySelectorAll<HTMLElement>('[data-ff-dot]')];
   const back = ff<HTMLButtonElement>('back');
   const next = ff<HTMLButtonElement>('next');
   const stepHint = ff('step-hint');
@@ -347,6 +348,15 @@ function init(root: HTMLElement) {
     next.disabled = !ok;
     submit.disabled = !ok;
     stepHint.hidden = ok;
+    paintLocationReady();
+    saveDraft();
+  }
+
+  /** Tarjeta «Ubicación lista»: aparece en cuanto hay unas coordenadas válidas, vengan de donde vengan. */
+  function paintLocationReady() {
+    const p = typedPoint();
+    locReady.hidden = !p;
+    if (p) locReadyCoords.textContent = `${coord(p.lat)}, ${coord(p.lon)}`;
   }
 
   function goTo(i: number, focus = true) {
@@ -356,9 +366,10 @@ function init(root: HTMLElement) {
     stepCount.textContent = label;
     progress.setAttribute('aria-valuenow', String(step + 1));
     progress.setAttribute('aria-valuetext', label);
-    const pct = `${((step + 1) / GROUPS.length) * 100}%`;
-    progressBar.style.width = pct;
-    progressMarker.style.left = pct;
+    progressBar.style.width = `${(step / last) * 100}%`;
+    stepName.textContent = PASOS.nombres[step] ?? '';
+    dots.forEach((d, n) => (d.dataset.estado = n < step ? 'hecho' : n === step ? 'actual' : 'pendiente'));
+    if (step === 0) parcelMap?.refresh(typedPoint()); // el mapa estuvo oculto: recalcula su tamaño
     back.hidden = step === 0;
     next.hidden = step === last;
     submit.hidden = step !== last;
@@ -415,6 +426,7 @@ function init(root: HTMLElement) {
         field('accuracy').value = String(Math.round(p.coords.accuracy));
         placeResults.hidden = true;
         sync();
+        parcelMap?.refresh(typedPoint());
         say(p.coords.accuracy > 1000 ? UBICACION_ESTADO.gpsAproximada(p.coords.accuracy) : UBICACION_ESTADO.gpsListo);
       },
       () => sayManual(CAMPOS.ubicacion.errorGps),
@@ -446,6 +458,7 @@ function init(root: HTMLElement) {
           field('origin').value = 'place_search';
           field('accuracy').value = '';
           setError('ubicacion', null);
+          parcelMap?.refresh(typedPoint());
           say(`${UBICACION_ESTADO.elegida(p.name)} ${UBICACION_ESTADO.coincidenciaAproximada}`);
         });
         return label;
@@ -468,11 +481,13 @@ function init(root: HTMLElement) {
   // ---------- Ubicación: mapa satelital (Leaflet se descarga solo al abrirlo) ----------
 
   const mapBox = ff('map');
-  const mapToggle = ff<HTMLButtonElement>('map-toggle');
   const mapStatus = ff('map-status');
   const mapUse = ff<HTMLButtonElement>('map-use');
+  const locReady = ff('loc-ready');
+  const locReadyCoords = ff('loc-ready-coords');
   let parcelMap: import('./parcel-map.ts').ParcelMap | null = null;
   let mapLoading = false;
+  let draftPoints: LatLon[] = []; // esquinas del borrador, hasta que el mapa se monte
 
   const typedPoint = (): LatLon | null => {
     const lat = num(field('lat').value);
@@ -481,6 +496,8 @@ function init(root: HTMLElement) {
   };
   const coord = (n: number) => localNum(Number(n.toFixed(5)));
   function describeMap(points: LatLon[], shape: ParcelShape | null) {
+    draftPoints = points;
+    saveDraft();
     mapUse.disabled = !shape;
     if (!shape) {
       mapStatus.textContent = MAPA_PARCELA.vacio;
@@ -492,26 +509,31 @@ function init(root: HTMLElement) {
     mapStatus.textContent = ha ? MAPA_PARCELA.parcela(points.length, lat, lon, ha) : MAPA_PARCELA.centro(lat, lon);
   }
 
-  mapToggle.addEventListener('click', async () => {
-    const open = mapToggle.getAttribute('aria-expanded') !== 'true';
-    mapToggle.setAttribute('aria-expanded', String(open));
-    mapBox.hidden = !open;
-    if (!open) return;
-    if (parcelMap) return parcelMap.refresh(typedPoint());
-    if (mapLoading) return;
+  // El mapa está a la vista en el paso 1, pero Leaflet (chunk aparte) solo se descarga cuando el mapa entra en pantalla.
+  async function loadMap() {
+    if (parcelMap || mapLoading) return;
     mapLoading = true;
     mapStatus.textContent = MAPA_PARCELA.cargando;
     try {
       const { mountParcelMap } = await import('./parcel-map.ts');
-      parcelMap = mountParcelMap({ el: ff('map-canvas'), start: typedPoint(), text: MAPA_PARCELA, onChange: describeMap });
-      mapStatus.textContent = MAPA_PARCELA.vacio;
+      const start = typedPoint() ?? draftPoints[0] ?? null;
+      parcelMap = mountParcelMap({ el: ff('map-canvas'), start, text: MAPA_PARCELA, initial: draftPoints, onChange: describeMap });
+      if (!draftPoints.length) mapStatus.textContent = MAPA_PARCELA.vacio;
     } catch {
       mapStatus.textContent = MAPA_PARCELA.errorCarga;
       showCoords(true);
     } finally {
       mapLoading = false;
     }
-  });
+  }
+  if ('IntersectionObserver' in window) {
+    const seen = new IntersectionObserver((entries) => {
+      if (!entries.some((e) => e.isIntersecting)) return;
+      seen.disconnect();
+      void loadMap();
+    });
+    seen.observe(mapBox);
+  } else void loadMap();
   ff('map-center').addEventListener('click', () => parcelMap?.markCenter());
   ff('map-clear').addEventListener('click', () => parcelMap?.clear());
   // Mismo camino que escribir las coordenadas: los eventos `input` limpian el error, marcan el origen manual y sincronizan.
@@ -524,7 +546,6 @@ function init(root: HTMLElement) {
     field('lon').value = lon;
     placeResults.hidden = true;
     for (const n of ['lat', 'lon']) field(n).dispatchEvent(new Event('input', { bubbles: true }));
-    showCoords(true);
     say(MAPA_PARCELA.aplicada(lat, lon));
   });
 
@@ -830,6 +851,63 @@ function init(root: HTMLElement) {
   });
   paintNet();
 
-  goTo(0, false);
+  // ---------- Borrador: cambiar EN | ES (otra ruta) no borra lo ya respondido ----------
+
+  const DRAFT_KEY = 'agroshift.draft';
+  interface Draft { step: number; fields: Record<string, string | boolean>; points: LatLon[] }
+  let restoring = true; // hasta restaurar, sync() no debe pisar el borrador guardado
+  const draftControls = () =>
+    [...form.elements].filter((el): el is HTMLInputElement | HTMLSelectElement => (el instanceof HTMLInputElement || el instanceof HTMLSelectElement) && !!el.name && el.name !== 'place_choice');
+
+  function saveDraft() {
+    if (restoring) return;
+    const fields: Draft['fields'] = {};
+    for (const el of draftControls()) {
+      const kind = el instanceof HTMLInputElement ? el.type : 'select';
+      if (kind === 'radio') {
+        if ((el as HTMLInputElement).checked) fields[el.name] = el.value;
+      } else fields[el.name] = kind === 'checkbox' ? (el as HTMLInputElement).checked : el.value;
+    }
+    try {
+      sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ step, fields, points: draftPoints } satisfies Draft));
+    } catch {
+      // sin almacenamiento: el formulario funciona igual
+    }
+  }
+
+  /** Devuelve el paso guardado (0 si no hay borrador). Coordenadas y cultivo se reexpresan en el idioma de esta ruta. */
+  function restoreDraft(): number {
+    let d: Draft | null = null;
+    try {
+      d = JSON.parse(sessionStorage.getItem(DRAFT_KEY) ?? 'null');
+    } catch {
+      return 0;
+    }
+    if (!d || typeof d.fields !== 'object' || d.fields === null) return 0;
+    for (const el of draftControls()) {
+      const saved = d.fields[el.name];
+      const kind = el instanceof HTMLInputElement ? el.type : 'select';
+      if (kind === 'radio') (el as HTMLInputElement).checked = saved === el.value;
+      else if (kind === 'checkbox') (el as HTMLInputElement).checked = saved === true;
+      else if (typeof saved === 'string') {
+        let v = saved;
+        if (el.name === 'lat' || el.name === 'lon') v = Number.isFinite(num(v)) ? localNum(num(v)) : v;
+        else if (el.name === 'crop_name') {
+          const hit = findCrop(v);
+          if (hit) v = capital(cropName(hit.id, lang));
+        }
+        el.value = v;
+      }
+    }
+    const ok = (n: unknown) => typeof n === 'number' && Number.isFinite(n);
+    draftPoints = Array.isArray(d.points) ? d.points.filter((p) => ok(p?.lat) && ok(p?.lon)).slice(0, 4) : [];
+    showCoords(field('origin').value === 'manual_coordinates' && !!field('lat').value);
+    return Number.isInteger(d.step) ? Math.max(0, Math.min(last, d.step)) : 0;
+  }
+  window.addEventListener('pagehide', saveDraft);
+
+  const startStep = restoreDraft();
+  restoring = false;
+  goTo(startStep, false);
   void refreshSaved();
 }

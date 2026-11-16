@@ -14,7 +14,10 @@ const rapidas = CROPS.map((c) => ({ id: c.id, nombre: capital(cropName(c.id, lan
 ---
 <form data-ff="form" novalidate class="formulario">
   <div class="paso-encabezado">
-    <p class="paso-conteo" data-ff="step-count" aria-live="polite">{PASOS.conteo(1, 5)}</p>
+    <div class="paso-linea">
+      <p class="paso-conteo" data-ff="step-count" aria-live="polite">{PASOS.conteo(1, 5)}</p>
+      <p class="paso-nombre" data-ff="step-name" aria-hidden="true">{PASOS.nombres[0]}</p>
+    </div>
     <div class="progreso-pista">
       <div
         class="progreso"
@@ -26,11 +29,11 @@ const rapidas = CROPS.map((c) => ({ id: c.id, nombre: capital(cropName(c.id, lan
         aria-valuenow="1"
         aria-valuetext={PASOS.conteo(1, 5)}
       >
-        <span class="progreso__barra" data-ff="progress-bar" style="width: 20%"></span>
+        <span class="progreso__barra" data-ff="progress-bar" style="width: 0%"></span>
       </div>
-      <span class="progreso__marca" data-ff="progress-marker" style="left: 20%" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="currentColor" focusable="false"><path d="M12 21v-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none" /><path d="M12 14C6.5 14 4 10.5 4 6c5 0 8 3 8 8Z" /><path d="M12 11c0-4.500 2.500-7.500 8-7.500 0 4.500-2.500 7.500-8 7.500Z" /></svg>
-      </span>
+      <ol class="paso-puntos" aria-hidden="true">
+        {PASOS.nombres.map((_, i) => <li class="paso-punto" data-ff-dot data-estado={i === 0 ? 'actual' : 'pendiente'}>{i + 1}</li>)}
+      </ol>
     </div>
   </div>
 
@@ -164,8 +167,8 @@ const rapidas = CROPS.map((c) => ({ id: c.id, nombre: capital(cropName(c.id, lan
 
   <div class="paso-acciones">
     <button type="button" class="opcion" data-ff="back" hidden>{PASOS.atras}</button>
-    <button type="button" class="boton" data-ff="next" aria-describedby="paso-pista" disabled>{PASOS.siguiente}</button>
-    <button type="submit" class="boton boton--principal" data-ff="submit" aria-describedby="paso-pista" hidden disabled>{BOTON_ENVIAR.reposo}</button>
+    <button type="button" class="boton boton--ancho boton--flecha" data-ff="next" aria-describedby="paso-pista" disabled>{PASOS.siguiente}</button>
+    <button type="submit" class="boton boton--ancho boton--principal" data-ff="submit" aria-describedby="paso-pista" hidden disabled>{BOTON_ENVIAR.reposo}</button>
   </div>
   <p id="paso-pista" class="texto-suave" data-ff="step-hint">{PASOS.pista}</p>
   <p class="texto-suave" data-ff="last-note" hidden>{FORMULARIO_EXTRA.notaFinal}</p>

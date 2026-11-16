@@ -2,92 +2,98 @@
 import { dict, type Lang } from '../i18n/index.ts';
 
 const { lang } = Astro.props as { lang: Lang };
-const { CAMPOS, COORDENADAS_MANUAL, FORMULARIO_EXTRA, MAPA_PARCELA: M } = dict(lang);
+const { CAMPOS, COORDENADAS_MANUAL, FORMULARIO_EXTRA, MAPA_PARCELA: M, UBICACION_EXTRA } = dict(lang);
 const c = CAMPOS.ubicacion;
 ---
-<div class="pila">
+<div class="ubicacion">
   <input type="hidden" name="origin" value="manual_coordinates" />
   <input type="hidden" name="accuracy" value="" />
 
-  <div>
-    <button type="button" class="opcion" data-ff="gps">{c.opciones.gps}</button>
-  </div>
+  <div class="pila ubicacion__izq">
+    <button type="button" class="boton boton--ancho" data-ff="gps">{c.opciones.gps}</button>
 
-  <div class="pila-corta">
-    <label for="place" class="etiqueta">{c.localidad}</label>
-    <div class="fila-busqueda">
-      <input
-        type="text"
-        id="place"
-        name="place"
-        class="entrada"
-        autocomplete="off"
-        autocapitalize="words"
-        enterkeyhint="search"
-        aria-describedby="error-ubicacion"
-      />
-      <button type="button" class="opcion" data-ff="search">{c.opciones.place_search}</button>
+    <p class="separador" aria-hidden="true"><span>{UBICACION_EXTRA.otraForma}</span></p>
+
+    <div class="pila-corta">
+      <label for="place" class="etiqueta">{c.localidad}</label>
+      <div class="fila-busqueda">
+        <input
+          type="text"
+          id="place"
+          name="place"
+          class="entrada"
+          autocomplete="off"
+          autocapitalize="words"
+          enterkeyhint="search"
+          aria-describedby="error-ubicacion"
+        />
+        <button type="button" class="opcion" data-ff="search">{c.opciones.place_search}</button>
+      </div>
+    </div>
+
+    <div data-ff="location-status" aria-live="polite" class="texto-suave"></div>
+
+    <fieldset data-ff="place-results" class="opciones" hidden>
+      <legend class="etiqueta">{FORMULARIO_EXTRA.eligeLocalidad}</legend>
+    </fieldset>
+
+    <div>
+      <button type="button" class="enlace enlace--boton" data-ff="coords-toggle" aria-expanded="false" aria-controls="coordenadas">
+        {COORDENADAS_MANUAL}
+      </button>
+    </div>
+
+    <div id="coordenadas" data-ff="coords" role="group" aria-label={COORDENADAS_MANUAL} class="pila-corta" hidden>
+      <div class="par">
+        <div class="pila-corta">
+          <label for="lat" class="etiqueta etiqueta--fina">{c.latitud}</label>
+          <input
+            type="text"
+            id="lat"
+            name="lat"
+            class="entrada dato-tecnico"
+            inputmode="decimal"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder={lang === 'en' ? '-6.77' : '-6,77'}
+            aria-describedby="error-ubicacion"
+          />
+        </div>
+        <div class="pila-corta">
+          <label for="lon" class="etiqueta etiqueta--fina">{c.longitud}</label>
+          <input
+            type="text"
+            id="lon"
+            name="lon"
+            class="entrada dato-tecnico"
+            inputmode="decimal"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder={lang === 'en' ? '-79.84' : '-79,84'}
+            aria-describedby="error-ubicacion"
+          />
+        </div>
+      </div>
+    </div>
+
+    <div class="ubicacion-lista" data-ff="loc-ready" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="m8 12.5 3 3 5-6" /></svg>
+      <div>
+        <strong>{UBICACION_EXTRA.lista}</strong>
+        <span class="dato-tecnico" data-ff="loc-ready-coords"></span>
+      </div>
     </div>
   </div>
 
-  <div data-ff="location-status" aria-live="polite" class="texto-suave"></div>
-
-  <fieldset data-ff="place-results" class="opciones" hidden>
-    <legend class="etiqueta">{FORMULARIO_EXTRA.eligeLocalidad}</legend>
-  </fieldset>
-
-  <div>
-    <button type="button" class="opcion" data-ff="map-toggle" aria-expanded="false" aria-controls="mapa-parcela">{M.abrir}</button>
-  </div>
-
-  <div id="mapa-parcela" data-ff="map" role="group" aria-label={M.region} class="mapa-parcela" hidden>
+  <div id="mapa-parcela" data-ff="map" role="group" aria-label={M.region} class="mapa-parcela ubicacion__der">
     <p class="texto-suave">{M.ayuda}</p>
     <div data-ff="map-canvas" class="mapa-parcela__lienzo" tabindex="0"></div>
     <p data-ff="map-status" aria-live="polite" class="mapa-parcela__estado"></p>
     <div class="mapa-parcela__acciones">
       <button type="button" class="opcion" data-ff="map-center">{M.marcarCentro}</button>
       <button type="button" class="opcion" data-ff="map-clear">{M.limpiar}</button>
-      <button type="button" class="opcion" data-ff="map-use" disabled>{M.usar}</button>
     </div>
-  </div>
-
-  <div>
-    <button type="button" class="enlace enlace--boton" data-ff="coords-toggle" aria-expanded="false" aria-controls="coordenadas">
-      {COORDENADAS_MANUAL}
-    </button>
-  </div>
-
-  <div id="coordenadas" data-ff="coords" role="group" aria-label={COORDENADAS_MANUAL} class="pila-corta" hidden>
-    <div class="par">
-      <div class="pila-corta">
-        <label for="lat" class="etiqueta etiqueta--fina">{c.latitud}</label>
-        <input
-          type="text"
-          id="lat"
-          name="lat"
-          class="entrada dato-tecnico"
-          inputmode="decimal"
-          autocomplete="off"
-          spellcheck="false"
-          placeholder={lang === 'en' ? '-6.77' : '-6,77'}
-          aria-describedby="error-ubicacion"
-        />
-      </div>
-      <div class="pila-corta">
-        <label for="lon" class="etiqueta etiqueta--fina">{c.longitud}</label>
-        <input
-          type="text"
-          id="lon"
-          name="lon"
-          class="entrada dato-tecnico"
-          inputmode="decimal"
-          autocomplete="off"
-          spellcheck="false"
-          placeholder={lang === 'en' ? '-79.84' : '-79,84'}
-          aria-describedby="error-ubicacion"
-        />
-      </div>
-    </div>
+    <button type="button" class="boton boton--ancho" data-ff="map-use" disabled>{M.usar}</button>
   </div>
 
   <template data-ff-tpl="place-option">

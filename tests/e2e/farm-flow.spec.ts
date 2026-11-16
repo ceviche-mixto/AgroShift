@@ -428,7 +428,7 @@ test.describe('red lenta y sin conexión', () => {
     await page.reload();
     await expect(page.getByRole('heading', { name: 'Planea tu próxima siembra' })).toBeVisible();
     await expect(page.getByText('No hay conexión a internet')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Ingresar coordenadas manualmente' })).toBeVisible();
+    await stepLabel(page, 5); // el borrador de la sesión se restaura al recargar
 
     // El plan guardado se abre sin red y muestra lo mismo que se vio en línea
     await page.locator('[data-act="open"]').click();
@@ -600,6 +600,49 @@ test.describe('idioma: inglés por defecto y selector EN | ES', () => {
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Plan your next planting');
     await page.goto('/fuentes/');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Scientific sources and tools');
+  });
+
+  test('cambiar EN | ES conserva el borrador del quiz en ambos sentidos', async ({ page }) => {
+    await page.goto('/es/');
+    await setCoords(page, '12,97', '77,59');
+    await next(page);
+    await page.getByLabel('Nombre del cultivo').fill('Maíz');
+    await next(page);
+    await page.getByRole('radio', { name: 'Quiero cuidar mi suelo' }).check();
+
+    await page.locator('a[data-lang="en"]').first().click();
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+    await expect(page.locator('[data-ff="step-count"]')).toHaveText('Step 3 of 5');
+    await expect(page.getByRole('radio', { name: 'I want to take care of my soil' })).toBeChecked();
+    await page.getByRole('button', { name: 'Back' }).click();
+    await expect(page.getByLabel('Crop name')).toHaveValue('Maize');
+    await page.getByRole('button', { name: 'Back' }).click();
+    await expect(page.getByLabel('Latitude')).toHaveValue('12.97'); // decimal con punto en inglés
+    await expect(page.locator('[data-ff="loc-ready"]')).toContainText('12.97, 77.59');
+
+    await page.locator('a[data-lang="es"]').first().click();
+    await expect(page.locator('[data-ff="step-count"]')).toHaveText('Paso 1 de 5');
+    await expect(page.getByLabel('Latitud')).toHaveValue('12,97'); // y con coma en español
+  });
+
+  test('paso 1: dos columnas en escritorio, una en móvil, indicador de cinco pasos y mapa a la vista', async ({ page }) => {
+    await page.goto('/es/');
+    await expect(page.locator('[data-ff="step-name"]')).toHaveText('Ubicación');
+    await expect(page.locator('[data-ff-dot]')).toHaveCount(5);
+    await expect(page.locator('[data-ff-dot]').first()).toHaveAttribute('data-estado', 'actual');
+    const gps = page.getByRole('button', { name: 'Usar mi ubicación' });
+    const map = page.locator('[data-ff="map"]');
+    await expect(map).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Usar esta ubicación' })).toBeDisabled();
+    const [g, m] = await Promise.all([gps.boundingBox(), map.boundingBox()]);
+    expect(m!.x).toBeGreaterThan(g!.x + g!.width); // mapa a la derecha
+
+    await page.setViewportSize({ width: 320, height: 700 });
+    const [g2, m2] = await Promise.all([gps.boundingBox(), map.boundingBox()]);
+    expect(m2!.y).toBeGreaterThan(g2!.y); // en móvil el mapa baja
+    const [scroll, inner] = await page.evaluate(() => [document.documentElement.scrollWidth, window.innerWidth]);
+    expect(scroll).toBe(inner);
+    expect((await page.getByRole('button', { name: 'Siguiente' }).boundingBox())!.height).toBeGreaterThanOrEqual(47.5);
   });
 
   test('flujo completo en inglés: quiz, plan y explicación con lang en la petición', async ({ page, context }) => {

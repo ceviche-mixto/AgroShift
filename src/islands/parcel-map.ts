@@ -1,9 +1,9 @@
 import L from 'leaflet';
 import leafletCss from 'leaflet/dist/leaflet.css?url';
 import mapCss from './parcel-map.css?url';
-import { addVertex, parcelShape, type LatLon, type ParcelShape } from '../domain/parcel.ts';
+import { addVertex, MAX_VERTICES, parcelShape, type LatLon, type ParcelShape } from '../domain/parcel.ts';
 
-// Chunk aparte: FarmFlow lo carga con import() solo cuando se pulsa «Seleccionar parcela en mapa satelital».
+// Chunk aparte: FarmFlow lo carga con import() cuando el mapa del paso 1 entra en pantalla.
 // No importa nada de Supabase, NASA ni del paquete inicial salvo la geometría pura.
 
 type Text = { mapa: string; zoomMas: string; zoomMenos: string; atribucion: string };
@@ -13,6 +13,8 @@ export interface ParcelMapOptions {
   /** Coordenadas ya escritas (centro inicial); `null` = vista del mundo. */
   start: LatLon | null;
   text: Text;
+  /** Esquinas ya marcadas (borrador restaurado al cambiar de idioma). */
+  initial?: LatLon[];
   onChange: (points: LatLon[], shape: ParcelShape | null) => void;
 }
 export interface ParcelMap {
@@ -38,7 +40,7 @@ const TILES = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imager
 const WORLD: [number, number] = [10, 0];
 const FIELD_ZOOM = 16;
 
-export function mountParcelMap({ el, start, text, onChange }: ParcelMapOptions): ParcelMap {
+export function mountParcelMap({ el, start, text, initial, onChange }: ParcelMapOptions): ParcelMap {
   const map = L.map(el, { zoomControl: false, worldCopyJump: true, minZoom: 2, maxBounds: [[-90, -540], [90, 540]] });
   map.setView(start ? [start.lat, start.lon] : WORLD, start ? FIELD_ZOOM : 2);
   L.control.zoom({ zoomInTitle: text.zoomMas, zoomOutTitle: text.zoomMenos }).addTo(map);
@@ -77,6 +79,11 @@ export function mountParcelMap({ el, start, text, onChange }: ParcelMapOptions):
       add(map.getCenter());
     }
   });
+
+  if (initial?.length) {
+    points = initial.slice(0, MAX_VERTICES);
+    paint();
+  }
 
   return {
     points: () => points,

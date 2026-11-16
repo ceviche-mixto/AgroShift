@@ -415,6 +415,8 @@ export function planGuardado(edad: string): Mensaje {
 export const UBICACION_EXTRA = {
   unaCoincidencia: 'Encontramos este lugar. Confírmalo para usarlo.',
   escribeLocalidad: 'Escribe el nombre de tu localidad para buscarla.',
+  otraForma: 'o elige otra forma',
+  lista: 'Ubicación lista',
 } as const;
 
 // ---------- Formulario por pasos, pie de página y página de fuentes ----------
@@ -425,6 +427,7 @@ export const PASOS = {
   siguiente: 'Siguiente',
   atras: 'Atrás',
   pista: 'Responde esta pregunta para continuar.',
+  nombres: ['Ubicación', 'Cultivo', 'Objetivo', 'Agua', 'Siembra'],
 } as const;
 
 /** Paso 1: las coordenadas se escriben solo si la persona lo pide. */
@@ -649,7 +652,7 @@ export const PLANES_GUARDADOS = {
 export const MAPA_PARCELA = {
   abrir: 'Seleccionar parcela en mapa satelital',
   region: 'Mapa satelital de tu parcela',
-  ayuda: 'Toca el mapa para marcar tu parcela. Marca hasta 4 esquinas para delimitarla; el quinto toque empieza de nuevo. Siempre puedes escribir las coordenadas.',
+  ayuda: 'Mueve el mapa y toca para marcar tu parcela. Marca hasta 4 esquinas para delimitarla; el quinto toque empieza de nuevo.',
   mapa: 'Mapa satelital. Usa las flechas para moverlo y las teclas más y menos para acercar o alejar.',
   marcarCentro: 'Marcar el centro del mapa',
   limpiar: 'Borrar',
@@ -661,7 +664,7 @@ export const MAPA_PARCELA = {
   zoomMenos: 'Alejar',
   atribucion: 'Imágenes: Esri, Maxar, Earthstar Geographics y la comunidad de usuarios de GIS',
   centro: (lat: string, lon: string) => `Centro marcado: ${lat}, ${lon}.`,
-  parcela: (n: number, lat: string, lon: string, ha: string) => `Parcela con ${n} esquinas marcadas. Centro: ${lat}, ${lon}. Unas ${ha} hectáreas.`,
+  parcela: (n: number, lat: string, lon: string, ha: string) => `Marcaste ${n} de 4 esquinas. Centro: ${lat}, ${lon}. Unas ${ha} hectáreas.`,
   aplicada: (lat: string, lon: string) => `Ubicación tomada del mapa: ${lat}, ${lon}.`,
 } as const;
 

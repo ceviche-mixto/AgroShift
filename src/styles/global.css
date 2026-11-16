@@ -408,9 +408,8 @@ body {
   overflow: hidden;
 }
 .progreso__barra { display: block; height: 100%; background: var(--color-primario); transition: width 350ms ease-out; }
-.paso-acciones { display: flex; flex-wrap: wrap; gap: 0.75rem; }
-.paso-acciones .boton { flex: 1 1 10rem; cursor: pointer; }
-.paso-acciones .boton--principal { width: auto; justify-self: auto; }
+.paso-acciones { display: flex; gap: 0.75rem; }
+.paso-acciones .boton { flex: 1 1 auto; width: auto; justify-self: auto; padding: 0 1rem; cursor: pointer; }
 .paso-acciones .opcion { flex: 0 0 auto; }
 .boton:disabled {
   background: var(--opcion-off-fondo);
@@ -513,13 +512,9 @@ body {
 .pie .idioma .opcion { border-color: transparent; border-radius: 0.375rem; }
 @media (forced-colors: active) { .pie__paso, .pie__evento, .pie__iniciales { border-color: CanvasText; } }
 
-/* Barra de progreso del quiz: brote que avanza con el paso + transiciones suaves en controles. */
-.progreso-pista { position: relative; margin: 0.5rem 0.75rem 0.5rem 0; }
-.progreso__marca { position: absolute; top: 50%; left: 20%; width: 1.75rem; height: 1.75rem; transform: translate(-100%, -50%); border-radius: 50%; background: var(--color-primario); color: #c5f87a; display: flex; align-items: center; justify-content: center; border: 2px solid var(--color-superficie); box-shadow: 0 0 0 2px var(--color-primario); transition: left 350ms ease-out; pointer-events: none; }
-.progreso__marca svg { width: 1rem; height: 1rem; display: block; }
+/* Indicador del quiz: cinco círculos unidos por una barra + transiciones suaves en controles. */
 .boton, .opcion, .opcion-fila, input, select, textarea { transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s, transform 0.15s ease-out; }
-@media (forced-colors: active) { .progreso__marca { background: Highlight; color: HighlightText; } }
-@media (prefers-reduced-motion: reduce) { .cabecera, .ayuda[open] { animation: none; } .progreso__marca, .progreso__barra { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .cabecera, .ayuda[open] { animation: none; } .progreso__barra, .paso-punto { transition: none; } }
 
 /* ---------- Flujo: entrada de pasos, tacto en controles y resultados escalonados ---------- */
 :root { --suave: cubic-bezier(0.16, 1, 0.3, 1); }
@@ -552,3 +547,40 @@ main .opcion[aria-pressed="true"]:hover, main .opcion[aria-checked="true"]:hover
 .clima__valor { font-variant-numeric: tabular-nums; }
 
 @media (forced-colors: active) { .opcion-fila:hover, .opcion-fila:has(input:checked) { border-color: Highlight; } }
+
+/* ---------- Paso 1 en dos columnas, indicador con círculos y botones oscuros anchos ---------- */
+.paso-linea { display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; }
+.paso-nombre { margin: 0; font-weight: 700; color: var(--color-texto-suave); text-align: end; }
+.progreso-pista { position: relative; margin: 0; height: 1.75rem; }
+.progreso-pista .progreso { position: absolute; left: 0.875rem; right: 0.875rem; top: 50%; height: 0.25rem; transform: translateY(-50%); border: 0; background: #c9cfbf; }
+.progreso-pista .progreso__barra { background: var(--marca-fondo); }
+.paso-puntos { position: relative; display: flex; justify-content: space-between; margin: 0; padding: 0; list-style: none; }
+.paso-punto {
+  width: 1.75rem; height: 1.75rem; display: grid; place-items: center; border-radius: 50%;
+  font-size: 0.8125rem; font-weight: 700; font-variant-numeric: tabular-nums;
+  background: var(--color-superficie); color: var(--color-texto-suave); border: 2px solid #6f7b66;
+  transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+}
+.paso-punto[data-estado="hecho"], .paso-punto[data-estado="actual"] { background: var(--marca-fondo); color: var(--marca-lima); border-color: var(--marca-fondo); }
+.paso-punto[data-estado="actual"] { box-shadow: 0 0 0 3px var(--color-fondo), 0 0 0 5px var(--marca-fondo); }
+@media (forced-colors: active) { .progreso-pista .progreso { background: CanvasText; } .paso-punto[data-estado="hecho"], .paso-punto[data-estado="actual"] { background: Highlight; color: HighlightText; border-color: Highlight; } }
+
+.boton--ancho { width: 100%; background: var(--marca-fondo); color: var(--marca-lima); border-color: var(--marca-fondo); cursor: pointer; }
+.boton--ancho:hover { background: var(--marca-panel); }
+.boton--ancho:disabled { background: var(--opcion-off-fondo); color: var(--opcion-off-texto); border: 2px dashed var(--opcion-off-borde); }
+.boton--flecha::after { content: "→" / ""; margin-inline-start: 0.5rem; }
+
+.ubicacion { display: grid; gap: 1.5rem; }
+@media (min-width: 48rem) { .ubicacion { grid-template-columns: 1fr 1fr; gap: 2rem; align-items: start; } }
+.ubicacion__izq { align-content: start; min-width: 0; }
+.ubicacion__der { min-width: 0; }
+.separador { display: flex; align-items: center; gap: 0.75rem; margin: 0; font-size: 0.875rem; color: var(--color-texto-suave); }
+.separador::before, .separador::after { content: ""; flex: 1; height: 1px; background: #c9cfbf; }
+.ubicacion-lista { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.875rem 1rem; background: var(--exito-fondo); border: 2px solid var(--exito-borde); border-radius: 0.5rem; color: var(--color-texto); }
+.ubicacion-lista[hidden] { display: none; }
+.ubicacion-lista svg { flex: none; width: 1.5rem; height: 1.5rem; color: var(--exito-borde); }
+.ubicacion-lista div { display: grid; gap: 0.125rem; }
+.ubicacion-lista .dato-tecnico { font-variant-numeric: tabular-nums; }
+.mapa-parcela__lienzo { height: 22rem; max-height: 70vh; border: 2px solid var(--color-borde); border-radius: 0.5rem; background: var(--sindato-fondo); }
+.mapa-parcela__acciones { display: grid; grid-template-columns: 1fr auto; gap: 0.75rem; }
+.ubicacion__izq .fila-busqueda { grid-template-columns: 1fr; }

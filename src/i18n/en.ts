@@ -415,6 +415,8 @@ export function planGuardado(edad: string): Mensaje {
 export const UBICACION_EXTRA = {
   unaCoincidencia: 'We found this place. Confirm it to use it.',
   escribeLocalidad: 'Type the name of your town to search for it.',
+  otraForma: 'or choose another way',
+  lista: 'Location ready',
 } as const;
 
 // ---------- Step-by-step form, footer and sources page ----------
@@ -425,6 +427,7 @@ export const PASOS = {
   siguiente: 'Next',
   atras: 'Back',
   pista: 'Answer this question to continue.',
+  nombres: ['Location', 'Crop', 'Goal', 'Water', 'Planting'],
 } as const;
 
 /** Step 1: coordinates are typed only if the person asks to. */
@@ -649,7 +652,7 @@ export const PLANES_GUARDADOS = {
 export const MAPA_PARCELA = {
   abrir: 'Select field on satellite map',
   region: 'Satellite map of your field',
-  ayuda: 'Tap the map to mark your field. Mark up to 4 corners to outline it; a fifth tap starts over. You can always type the coordinates instead.',
+  ayuda: 'Move the map and tap to mark your field. Mark up to 4 corners to outline it; a fifth tap starts over.',
   mapa: 'Satellite map. Use the arrow keys to move it and the plus and minus keys to zoom.',
   marcarCentro: 'Mark the center of the map',
   limpiar: 'Clear',
@@ -661,7 +664,7 @@ export const MAPA_PARCELA = {
   zoomMenos: 'Zoom out',
   atribucion: 'Imagery: Esri, Maxar, Earthstar Geographics and the GIS User Community',
   centro: (lat: string, lon: string) => `Center marked: ${lat}, ${lon}.`,
-  parcela: (n: number, lat: string, lon: string, ha: string) => `Field with ${n} corners marked. Center: ${lat}, ${lon}. About ${ha} hectares.`,
+  parcela: (n: number, lat: string, lon: string, ha: string) => `Marked ${n} of 4 corners. Center: ${lat}, ${lon}. About ${ha} hectares.`,
   aplicada: (lat: string, lon: string) => `Location set from the map: ${lat}, ${lon}.`,
 } as const;
 
